@@ -6,24 +6,22 @@ class Sensor{
         this.raySpread = Math.PI/4;
 
         this.rays = [];
-        this.readings = [];
     }
 
     update(roadBorders){
         this.#castRays();
-        whis.readings = [];
+        this.readings = [];
         for(let i = 0; i < this.rays.length; i++){
             this.readings.push(
                 this.#getReading(this.rays[i], roadBorders)
-            );
+            )
         }
     }
 
-    #getReading(ray, roadBorders){
-        let = touches = [];
-
-        for (let i = 0; i < roadBorders.length; i){
-            const touch = getintersection(
+    #getReading(ray, roadBorders) {
+        let touches = [];
+        for(let i = 0; i < roadBorders.length; i){
+            const touch = getIntersection(
                 ray[0],
                 ray[1],
                 roadBorders[i][0],
@@ -37,9 +35,9 @@ class Sensor{
         if(touches.length == 0){
             return null;
         }else{
-            const offsets = touches.map(e=>e.offset);
+            const offsets = touches.map(e=>e.offset)
             const minOffset = Math.min(...offsets);
-            return touches.find(e=>e.offset==minOffset);
+            return touches.fins(e=>e.offset==minOffset);
         }
     }
 
@@ -51,7 +49,6 @@ class Sensor{
                 -this.raySpread/2,
                 i/(this.rayCount-1)
             ) + this.car.angle;
-
             const start = {x:this.car.x, y:this.car.y};
             const end = {
                 x:this.car.x-Math.sin(rayAngle)*this.rayLength,
@@ -67,6 +64,7 @@ class Sensor{
             if(this.readings[i]){
                 end = this.readings[i];
             }
+
             ctx.beginPath();
             ctx.lineWidth = 2;
             ctx.StrokeStyle = "yellow";
@@ -80,8 +78,6 @@ class Sensor{
             );
             ctx.stroke();
 
-
-            
             ctx.beginPath();
             ctx.lineWidth = 2;
             ctx.StrokeStyle = "black";
