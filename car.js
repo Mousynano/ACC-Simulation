@@ -1,5 +1,14 @@
 class Car{
-    constructor(x, y, width, height, controlType, maxSpeed=5, color="blue"){
+    constructor(x, y, width, height, controlType, maxSpeed=maxVelocity, color=getRandomColor()){
+        this.egoCarAcceleration = 0;
+        this.egoCarVelocity = [];
+        this.leadCarAcceleration = 0;
+        this.leadCarVelocity = [0, 0];
+        this.leadCarPos = [];
+        this.relativeDistance = 0;
+
+        this.fitness = 100000;
+
         this.x = x;
         this.y = y;
         this.width = width;
@@ -12,21 +21,78 @@ class Car{
         this.angle = 0;
         this.damaged = false;
 
-        this.useBrain = controlType == "AI";
+        this.controlType = controlType;
+        this.useBrain = this.controlType == "AI";
+        this.useACC = this.controlType == "ACC";
 
         if(controlType != "DUMMY"){
-            this.sensor = new Sensor(this);
-            this.brain = new NeuralNetwork(
-                [this.sensor.rayCount, 6, 4]
-            );
+            if(localStorage.getItem(data)){
+                if(controlType == "ACC"){
+                    console.log("halo")
+                    this.sensor = new Sensor(this, 1);
+                    this.brain = JSON.parse(localStorage.getItem(data));
+                    if(!firstCar){
+                        AdaptiveCruiseControl.mutate(this.brain.avc, mutationRange);
+                        AdaptiveCruiseControl.mutate(this.brain.adc, mutationRange);
+                    }
+                    this.useBrain = false;
+                    this.useACC = true;
+                }
+                else if (controlType == "AI"){
+                    this.sensor = new Sensor(this, 5);
+                    this.brain = JSON.parse(localStorage.getItem(data));
+                    if(!firstCar){
+                        NeuralNetwork.mutate(this.brain, mutationRange);
+                    }
+                    this.useBrain = true;
+                    this.useACC = false;
+                }
+                else{
+                    this.sensor = new Sensor(this, 0);
+                    this.brain = undefined;
+                    this.useBrain = false;
+                    this.useACC = false;
+                }
+            }else{
+                if(controlType == "ACC"){
+                    this.sensor = new Sensor(this, 1);
+                    this.brain = new AdaptiveCruiseControl();
+                    this.useBrain = false;
+                    this.useACC = true;
+                }
+                else if (controlType == "AI"){
+                    this.sensor = new Sensor(this, 5);
+                    this.brain = new NeuralNetwork([this.sensor.rayCount, 8, 6, 4]);
+                    this.useBrain = true;
+                    this.useACC = false;
+                }
+                else{
+                    this.sensor = new Sensor(this, 0);
+                    this.brain = undefined;
+                    this.useBrain = false;
+                    this.useACC = false;
+                }
+            }
         }
+        this.delaySpeedSensor = 0;
+        this.coba = [];
         this.controls = new Controls(controlType);
+        
         this.img = new Image();
-        this.img.src = "mobil2.png"
+        this.img.src = "mobil2.png";
 
         this.mask = document.createElement("canvas");
         this.mask.width = width;
         this.mask.height = height;
+
+        // this.kp = Math.random();
+        // this.ki = Math.random();
+        // this.kd = Math.random();
+
+        // //ini konstanta yang terbaik buat avc
+        // this.kp = 0.89; 
+        // this.ki = 0.01;
+        // this.kd = 0.1;
         
         const maskCtx = this.mask.getContext("2d");
         this.img.onload = () =>{
@@ -36,27 +102,57 @@ class Car{
 
             maskCtx.globalCompositeOperation ="destination-atop";
             maskCtx.drawImage(this.img, 0, 0, this.width, this.height);
-        }
-    }
+        };
+    }   
 
     update(roadBorders, traffic){
         if(!this.damaged){
             this.#move();
             this.polygon = this.#createPolygon();
             this.damaged = this.#assessDamage(roadBorders, traffic);
-        }
-        if(this.sensor){
-            this.sensor.update(roadBorders, traffic);
-            const offsets = this.sensor.readings.map(
-                s=>s==null ? 0 : 1 - s.offset
-            );
-            const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+            if(this.sensor){
+                this.distance = 175;
+                let leadCarNow = 175;
+                this.sensor.update(roadBorders, traffic);
+                const offsets = this.sensor.readings.map(
+                    s=>s==null ? 0 : 1 - s.offset
+                );
 
-            if(this.useBrain) {
-                this.controls.forward = outputs[0];
-                this.controls.left = outputs[1];
-                this.controls.right = outputs[2];
-                this.controls.reverse = outputs[3];
+                if ((this.sensor.readings[0]) && (this.sensor.rayCount == 1)) {
+                    leadCarNow = this.sensor.readings[0].y;
+                    if(this.leadCarPos.length > 0){
+                        this.leadCarPos[0] = this.leadCarPos[1];
+                        this.leadCarPos[1] = this.sensor.readings[0].y;
+                    }else{
+                        this.leadCarPos[1] = this.sensor.readings[0].y;
+                    }
+                    this.distance = Math.abs(this.sensor.readings[0].y - this.sensor.car.y) - 25;
+                }else{
+                    this.distance = 175;
+                    leadCarNow = 175;
+                }
+    
+                if (this.sensor.rayCount == 0){}
+                else if(this.useBrain){
+                    this.maxSpeed = 10;
+
+                    const Arr = [[bestCar.y, this.y], ...offsets.map(offset => [3.6, 6 * offset])];
+                    const sumError = Arr.reduce((acc, [value1, value2]) => acc + relu((value2 - value1)), 0);
+                    const outputsNN = NeuralNetwork.feedForward(offsets, this.brain);
+                    this.fitness = iae(sumError);
+                    this.controls.forward = outputsNN[0];
+                    this.controls.left = outputsNN[1];
+                    this.controls.right = outputsNN[2];
+                    this.controls.reverse = outputsNN[3];
+                }else if(this.useACC){
+                    const controlKeys = [this.controls.forward, this.controls.reverse, this.controls.left, this.controls.right];
+                    const allFalse = controlKeys.every(key => !key);
+                    if (allFalse){
+                        const outputsACC = AdaptiveCruiseControl.accUpdate(this.speed, this.distance, safeDistance, leadCarNow, desiredSpeed, this.brain);
+                        this.fitness = this.brain.fitness;
+                        this.speed += outputsACC;
+                    }
+                }
             }
         }
     }
@@ -133,8 +229,32 @@ class Car{
             }
         }
 
+        // console.log("speed now: " + this.speed);
         this.x -= Math.sin(this.angle) * this.speed;
         this.y -= Math.cos(this.angle) * this.speed;
+
+        this.speedOutput = this.speed;
+        if (this.egoCarVelocity.length != 0){
+            this.egoCarVelocity[0] = this.egoCarVelocity[1];
+            this.egoCarVelocity[1] = this.speedOutput;
+            this.accelerationOutput = this.egoCarVelocity[1] - this.egoCarVelocity[0];
+            // console.log("acceleration output: " + this.accelerationOutput)
+        }else{
+            this.egoCarVelocity[1] = this.speedOutput;
+        }
+        
+        // if(this.leadCarPos.length != 0){
+        //     this.leadCarVelocity[0] = this.leadCarVelocity[1];
+        //     this.leadCarVelocity[1] = this.leadCarPos[1] - this.leadCarPos[0];
+        //     this.leadCarAcceleration = this.leadCarVelocity[1] - this.leadCarVelocity[0];
+        // }else{
+        //     this.leadCarVelocity[1] = this.leadCarPos[1] - this.leadCarPos[0];
+        //     // console.log("leadCarVelocity: " + this.leadCarVelocity);
+        //     if (!this.leadCarVelocity[1]){
+        //         this.leadCarVelocity[1] = 0;
+        //     }
+        // }
+        this.relativeDistance = this.distance;
     }
 
     draw(ctx, drawSensor=false){
@@ -149,9 +269,13 @@ class Car{
         //     ctx.lineTo(this.polygon[i].x, this.polygon[i].y);
         // }
         // ctx.fill();
-        if(this.sensor && drawSensor){
+        if(this.sensor && drawSensor && !this.damaged){
+            // this.car.color = "blue";
             this.sensor.draw(ctx);
         }
+        // else{
+            // this.car.color = "grey";
+        // }
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(-this.angle);

@@ -1,16 +1,72 @@
 <!DOCTYPE html>
 <head>
     <meta charset="utf-8">
-    <title>Self-driving car - No libraries</title>
+    <title>Proyek Akhir Sinyal & Sistem</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- <script src="chart.js"></script> -->
 </head>
 <body>
+    <!-- <canvas id="barChart" width="400" height="400"></canvas> -->
+
     <canvas id="carCanvas"></canvas>
-    <div id="verticalButtons">
-        <button onclick="save()">💾</button>
-        <button onclick="discard()">🗑️</button>
+
+    <div class="grafik">
+        <div class="atas">
+            <canvas id="Kecepatan" width="300" height="150"></canvas>
+            <canvas id="Percepatan" width="300" height="150"></canvas>
+            <canvas id="JarakRelatif" width="300" height="150"></canvas>
+            <canvas id="Fitness" width="300" height="150"></canvas>
+        </div>
     </div>
-    <canvas id="networkCanvas"></canvas>
+
+    </div>
+
+    <div id="verticalButtons">
+        <div id="generationInfo">Generasi: 0</div>
+        <div>
+            <label for="mutationDropdown">Rentang Mutasi: </label>
+            <select id="mutationDropdown">
+                <option value="0">0</option>
+                <option value="0.1">0.1</option>
+                <option value="0.2">0.2</option>
+                <option value="0.3">0.3</option>
+                <option value="0.4">0.4</option>
+                <option value="0.5">0.5</option>
+                <option value="0.6">0.6</option>
+                <option value="0.7">0.7</option>
+                <option value="0.8">0.8</option>
+                <option value="0.9">0.9</option>
+                <option value="1">1</option>
+                <!-- Tambahkan opsi lain sesuai kebutuhan -->
+            </select>
+        </div>
+        <div>
+            <label for="trainingTime">Waktu training: </label>
+            <select id="trainingTime">
+                <option value="10">10 detik</option>
+                <option value="20">20 detik</option>
+                <option value="30">30 detik</option>
+                <option value="60">60 detik</option>
+            </select>
+        </div>
+        <div>
+            <label for="mutationDropdown">Crossover PID: </label>
+            <select id="mutationDropdown">
+                <option value="ya">Ya</option>
+                <option value="ngga">Tidak</option>
+            </select>
+        </div>
+        <button onclick="trainingMode()">Training mode: OFF</button>
+        <button onclick="save()">💾</button>
+        <button onclick="discard()">🗑</button>
+        <button onclick="downloadJSON()">⬇</button>
+        <button onclick="changeMode()"></button>
+    </div>
+    <!-- <canvas id="networkCanvas"></canvas> -->
+    <!-- <script src="chart.js"></script> -->
+    <!-- <script src="pso.js"></script> -->
+    <script src="acc.js"></script>
     <script src="utils.js"></script>
     <script src="visualizer.js"></script>
     <script src="network.js"></script>

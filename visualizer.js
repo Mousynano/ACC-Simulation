@@ -6,10 +6,10 @@ class Visualizer{
         const width = ctx.canvas.width - margin * 2;
         const height = ctx.canvas.height - margin * 2;
 
-        // Visualizer.drawLevel(ctx, network.levels[0],
-        //     left, top,
-        //     width, height
-        //     );
+        Visualizer.drawLevel(ctx, network.levels[0],
+            left, top,
+            width, height
+            );
         const levelHeight = height/network.levels.length;
 
         for (let i = network.levels.length - 1; i >= 0; i--){
@@ -23,7 +23,7 @@ class Visualizer{
             Visualizer.drawLevel(ctx, network.levels[i],
                 left, levelTop,
                 width, levelHeight,
-                i == network.levels.length - 1? ["⬆️", "⬅️", "➡️", "⬇️"] : []
+                i == network.levels.length - 1? ["⬇"] : []
                 );
         }
     }

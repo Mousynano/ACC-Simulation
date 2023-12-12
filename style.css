@@ -4,11 +4,50 @@ body{
     overflow: hidden;
     display: flex;
     align-items: center;
+    justify-content: center;
+    font-family:'poppins';;
 }
 #verticalButtons{
     display: flex;
     flex-direction: column;
 }
+
+
+.grafik{
+    height: 100vh;
+    display: flex;
+}
+
+.grafik .atas{
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.grafik .bawah{
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.grafik .error{
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.grafik .error h1{
+    font-family:'poppins';
+    font-size: 24px;
+    font-weight: 500;
+}
+
 button{
     border: none;
     border-radius: 5px;
@@ -26,5 +65,5 @@ button:active{
     background: black;
 }
 #carCanvas{
-    background: lightgray;
+    background: black;
 }

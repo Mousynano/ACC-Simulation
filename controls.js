@@ -4,9 +4,15 @@ class Controls{
         this.left = false;
         this.right = false;
         this.reverse = false;
+        this.type = type;
+        this.adc = false;
+        this.avc = false;
 
-        switch(type){
+        switch(this.type){
             case "KEYS":
+                this.#addKeyboardListeners();
+                break;
+            case "ACC":
                 this.#addKeyboardListeners();
                 break;
             case "DUMMY":
