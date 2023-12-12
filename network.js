@@ -1,5 +1,6 @@
 class NeuralNetwork{
     constructor(neuronCounts){
+        this.fitness = 100000;
         this.levels = [];
         for(let i = 0; i < neuronCounts.length - 1; i++){
             this.levels.push(new Level(
@@ -7,6 +8,7 @@ class NeuralNetwork{
             ));
         }
     }
+    
     static feedForward(givenInputs, network){
         let outputs = Level.feedForward(
             givenInputs, network.levels[0]
