@@ -22,58 +22,8 @@ class Car{
         this.damaged = false;
 
         this.controlType = controlType;
-        this.useBrain = this.controlType == "AI";
-        this.useACC = this.controlType == "ACC";
+        // Brain.insert(this, data, mode);
 
-        if(controlType != "DUMMY"){
-            if(localStorage.getItem(data)){
-                if(controlType == "ACC"){
-                    console.log("halo")
-                    this.sensor = new Sensor(this, 1);
-                    this.brain = JSON.parse(localStorage.getItem(data));
-                    if(!firstCar){
-                        AdaptiveCruiseControl.mutate(this.brain.avc, mutationRange);
-                        AdaptiveCruiseControl.mutate(this.brain.adc, mutationRange);
-                    }
-                    this.useBrain = false;
-                    this.useACC = true;
-                }
-                else if (controlType == "AI"){
-                    this.sensor = new Sensor(this, 5);
-                    this.brain = JSON.parse(localStorage.getItem(data));
-                    if(!firstCar){
-                        NeuralNetwork.mutate(this.brain, mutationRange);
-                    }
-                    this.useBrain = true;
-                    this.useACC = false;
-                }
-                else{
-                    this.sensor = new Sensor(this, 0);
-                    this.brain = undefined;
-                    this.useBrain = false;
-                    this.useACC = false;
-                }
-            }else{
-                if(controlType == "ACC"){
-                    this.sensor = new Sensor(this, 1);
-                    this.brain = new AdaptiveCruiseControl();
-                    this.useBrain = false;
-                    this.useACC = true;
-                }
-                else if (controlType == "AI"){
-                    this.sensor = new Sensor(this, 5);
-                    this.brain = new NeuralNetwork([this.sensor.rayCount, 8, 6, 4]);
-                    this.useBrain = true;
-                    this.useACC = false;
-                }
-                else{
-                    this.sensor = new Sensor(this, 0);
-                    this.brain = undefined;
-                    this.useBrain = false;
-                    this.useACC = false;
-                }
-            }
-        }
         this.delaySpeedSensor = 0;
         this.coba = [];
         this.controls = new Controls(controlType);
@@ -84,15 +34,6 @@ class Car{
         this.mask = document.createElement("canvas");
         this.mask.width = width;
         this.mask.height = height;
-
-        // this.kp = Math.random();
-        // this.ki = Math.random();
-        // this.kd = Math.random();
-
-        // //ini konstanta yang terbaik buat avc
-        // this.kp = 0.89; 
-        // this.ki = 0.01;
-        // this.kd = 0.1;
         
         const maskCtx = this.mask.getContext("2d");
         this.img.onload = () =>{
@@ -133,7 +74,7 @@ class Car{
                 }
     
                 if (this.sensor.rayCount == 0){}
-                else if(this.useBrain){
+                else if(this.controlType == "AI"){
                     this.maxSpeed = 10;
 
                     const Arr = [[bestCar.y, this.y], ...offsets.map(offset => [3.6, 6 * offset])];
@@ -144,12 +85,12 @@ class Car{
                     this.controls.left = outputsNN[1];
                     this.controls.right = outputsNN[2];
                     this.controls.reverse = outputsNN[3];
-                }else if(this.useACC){
+                }else if(this.controlType == "ACC"){
                     const controlKeys = [this.controls.forward, this.controls.reverse, this.controls.left, this.controls.right];
                     const allFalse = controlKeys.every(key => !key);
                     if (allFalse){
-                        const outputsACC = AdaptiveCruiseControl.accUpdate(this.speed, this.distance, safeDistance, leadCarNow, desiredSpeed, this.brain);
-                        this.fitness = this.brain.fitness;
+                        let [outputsACC, fitness] = AdaptiveCruiseControl.accUpdate(this.speed, this.distance, safeDistance, leadCarNow, desiredSpeed, this.brain);
+                        this.fitness = fitness;
                         this.speed += outputsACC;
                     }
                 }
@@ -255,6 +196,7 @@ class Car{
         //     }
         // }
         this.relativeDistance = this.distance;
+        this.fitness = this.damaged ? 0 : this.fitness;
     }
 
     draw(ctx, drawSensor=false){

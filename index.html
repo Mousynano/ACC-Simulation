@@ -25,8 +25,8 @@
     <div id="verticalButtons">
         <div id="generationInfo">Generasi: 0</div>
         <div>
-            <label for="mutationDropdown">Rentang Mutasi: </label>
-            <select id="mutationDropdown">
+            <label for="mutationRangeButton">Rentang Mutasi: </label>
+            <select id="mutationRangeButton" onchange="UserInterface.setMutationRange(parseFloat(this.value), true)">
                 <option value="0">0</option>
                 <option value="0.1">0.1</option>
                 <option value="0.2">0.2</option>
@@ -38,12 +38,11 @@
                 <option value="0.8">0.8</option>
                 <option value="0.9">0.9</option>
                 <option value="1">1</option>
-                <!-- Tambahkan opsi lain sesuai kebutuhan -->
             </select>
         </div>
         <div>
-            <label for="trainingTime">Waktu training: </label>
-            <select id="trainingTime">
+            <label for="trainingTimeButton">Waktu training: </label>
+            <select id="trainingTimeButton" onchange="UserInterface.setTrainingTime(parseInt(this.value), true)">
                 <option value="10">10 detik</option>
                 <option value="20">20 detik</option>
                 <option value="30">30 detik</option>
@@ -57,16 +56,18 @@
                 <option value="ngga">Tidak</option>
             </select>
         </div>
-        <button onclick="trainingMode()">Training mode: OFF</button>
-        <button onclick="save()">💾</button>
-        <button onclick="discard()">🗑</button>
-        <button onclick="downloadJSON()">⬇</button>
-        <button onclick="changeMode()"></button>
+        <button id="trainingModeButton" onclick="UserInterface.setTraining(training, true)">Training mode: OFF</button>
+        <button id="savButton" onclick="UserInterface.save()">💾</button>
+        <button id="deleteButton" onclick="UserInterface.discard()">🗑</button>
+        <button id="downloadButton" onclick="UserInterface.downloadJSON()">⬇</button>
+        <button id="currentModeButton" onclick="UserInterface.setCurrentMode(currentMode, true)"></button>
     </div>
-    <!-- <canvas id="networkCanvas"></canvas> -->
-    <!-- <script src="chart.js"></script> -->
-    <!-- <script src="pso.js"></script> -->
+
+    <script src="pso.js"></script>
+    <script src="ga.js"></script>
+    <script src="brain.js"></script>
     <script src="acc.js"></script>
+    <script src="ui.js"></script>
     <script src="utils.js"></script>
     <script src="visualizer.js"></script>
     <script src="network.js"></script>
@@ -75,5 +76,6 @@
     <script src="controls.js"></script>
     <script src="car.js"></script>
     <script src="main.js"></script>
+    <script src="chartManager.js"></script>
 </body>
 </html>

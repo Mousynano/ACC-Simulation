@@ -56,23 +56,23 @@ function relu(x){
     return Math.max(0, x);
 }
 
-function iae(sumError){
-    const ff = Math.abs(sumError);
+function iae(error){
+    const ff = Math.abs(error);
     return ff;
 }
 
-function ise(sumError){
-    const ff = sumError * sumError;
+function ise(error){
+    const ff = error * error;
     return ff;
 }
 
-function itae(sumError, t){
-    const ff = Math.abs(sumError);
+function itae(error, t){
+    const ff = Math.abs(error);
     return ff * t;
 }
 
-function itse(sumError, t){
-    const ff = sumError * sumError;
+function itse(error, t){
+    const ff = error * error;
     return ff * t;
 }
 
