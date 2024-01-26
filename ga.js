@@ -1,79 +1,143 @@
+// This class is used to define how the GA works
 class GeneticAlgorithm{
     constructor(cars, mutation=0.4, crossover=0.7){
+        // These are the probability of the mutation and crossover that will occur
         this.mutation = mutation;
         this.crossover = crossover;
+
+        // This is the array that will be sorted ascending according to the cars' fitness
         this.cars = cars;
-        this.best = null;
-        this.secondBest = null;
-        this.child = null;
-        this.tempCars = [];
-        this.fitness;
     }
 
+    // This will be triggered whenever the iteration is done
     endIter(cars){
-        this.cars = this.#elitism(cars);
-        const [child1, child2] = this.#crossover(this.best, this.secondBest);
+        // Sort the cars by their fitness, and choose the best and secondBest from the training
+        let best, secondBest;
+        [this.cars, best, secondBest] = this.#elitism(cars);
+
+        // After the elitism, it will the crossover the parameters of the two best models to make child1 and child2
+        const [child1, child2] = this.#crossover(best, secondBest);
+
+        // From the crossover, it will be mutated with the according to mutationRange 
         const [mutant1, mutant2] = this.#mutation(child1, child2);
-        this.#regenerate(mutant1, mutant2);
-        location.reload(true);
+
+        // The mutated offsprings will then be regenerated to the next generation
+        this.#regenerate(mutant1, mutant2, best);
     }
 
-    #elitism(){
+    // Input: array of cars
+    // Output: array of sortedCars, best and secondBest car
+    #elitism(cars){
         const sortedCars = cars.sort((car1, car2) => car1.fitness - car2.fitness);
-        this.best = sortedCars[0];
-        this.secondBest = sortedCars[1];
-        return sortedCars;
-
+        const best = sortedCars[sortedCars.length - 1];
+        const secondBest = sortedCars[sortedCars.length - 2];
+        return [sortedCars, best, secondBest];
     }
 
+    // Input: best and secondBest car
+    // Output: 2 offspring (child1, child2)
     #crossover(best, secondBest){
-        let [cRand1, cRand2] = [Math.random(), Math.random()];
-        let [child1, child2] = [best, best];
+        const cRand1 = Math.random();
+        const cRand2 = Math.random();
+        let child1 = new AdaptiveCruiseControl();
+        let child2 = new AdaptiveCruiseControl();
         if(this.crossover > cRand1 && this.crossover > cRand2){
-            [child1.brain.kp, child1.brain.ki, child1.brain.kd] = [secondBest.brain.kp, best.brain.ki, secondBest.brain.kd];
-            [child2.brain.kp, child2.brain.ki, child2.brain.kd] = [best.brain.kp, secondBest.brain.ki, secondBest.brain.kd];
+            child1.kp = secondBest.brain.kp;
+            child1.ki = best.brain.ki;
+            child1.kd = secondBest.brain.kd;
+
+            child2.kp = best.brain.kp;
+            child2.ki = secondBest.brain.ki;
+            child2.kd = secondBest.brain.kd;
         }else{
             if(this.crossover > cRand1){
-                [child1.brain.kp, child1.brain.ki, child1.brain.kd] = [secondBest.brain.kp, secondBest.brain.ki, best.brain.kd];
-                [child2.brain.kp, child2.brain.ki, child2.brain.kd] = [secondBest.brain.kp, best.brain.ki, secondBest.brain.kd];
+                child1.kp = secondBest.brain.kp;
+                child1.ki = secondBest.brain.ki;
+                child1.kd = best.brain.kd;
+
+                child2.kp = secondBest.brain.kp;
+                child2.ki = best.brain.ki;
+                child2.kd = secondBest.brain.kd;
             }
             else if(this.crossover > cRand2){
-                [child1.brain.kp, child1.brain.ki, child1.brain.kd] = [best.brain.kp, secondBest.brain.ki, secondBest.brain.kd];
-                [child2.brain.kp, child2.brain.ki, child2.brain.kd] = [secondBest.brain.kp, secondBest.brain.ki, best.brain.kd];
+                child1.kp = best.brain.kp;
+                child1.ki = secondBest.brain.ki;
+                child1.kd = secondBest.brain.kd;
+
+                child2.kp = secondBest.brain.kp;
+                child2.ki = secondBest.brain.ki;
+                child2.kd = best.brain.kd;
             }
             else{
-                [child1, child2] = [best, secondBest];
+                child1.kp = best.brain.kp;
+                child1.ki = best.brain.ki;
+                child1.kd = best.brain.kd;
+
+                child2.kp = secondBest.brain.kp;
+                child2.ki = secondBest.brain.ki;
+                child2.kd = secondBest.brain.kd;
             }
         }
         return [child1, child2];
     }
 
+    // Input: 2 child from crossover
+    // Output: 2 mutated offspring
     #mutation(child1, child2){
         if(this.mutation > Math.random()){
-            child1.brain.kp = lerp(child1.brain.kp, (Math.random() * 2) - 1, mutationRange);
-            child1.brain.ki = lerp(child1.brain.ki, (Math.random() * 2) - 1, mutationRange);
-            child1.brain.kd = lerp(child1.brain.kd, (Math.random() * 2) - 1, mutationRange);
-            child2.brain.kp = lerp(child2.brain.kp, (Math.random() * 2) - 1, mutationRange);
-            child2.brain.ki = lerp(child2.brain.ki, (Math.random() * 2) - 1, mutationRange); 
-            child2.brain.kd = lerp(child2.brain.kd, (Math.random() * 2) - 1, mutationRange);
+            child1.kp = lerp(child1.kp, (Math.random() * 2) - 1, mutationRange);
+            child1.ki = lerp(child1.ki, (Math.random() * 2) - 1, mutationRange);
+            child1.kd = lerp(child1.kd, (Math.random() * 2) - 1, mutationRange);
+            child2.kp = lerp(child2.kp, (Math.random() * 2) - 1, mutationRange);
+            child2.ki = lerp(child2.ki, (Math.random() * 2) - 1, mutationRange); 
+            child2.kd = lerp(child2.kd, (Math.random() * 2) - 1, mutationRange);
         }
         return [child1, child2];
     }
-    
-    #regenerate(){
-        this.cars[this.cars.length - 1] = this.best;
-        this.cars[this.cars.length - 2] = this.secondBest;
-        this.fitness = this.best.fitness;
-    
-        // Membuat array baru yang hanya berisi properti yang diinginkan dari setiap Car
+
+    // This method will regenerate 
+    #regenerate(mutant1, mutant2, best){
+        // Mutates the worst and the second worst model by fitness with the mutated offsprings
+        this.cars[0].brain = mutant1;
+        this.cars[1].brain = mutant2;
+        
+        // Updates the history
+        const generation = parseInt(localStorage.getItem('generation'));
+        let carsHistory = (localStorage.getItem('carsHistory') == undefined) ? {} :  JSON.parse(localStorage.getItem('carsHistory'));
+        const carsData = [...this.cars].map((car, index) => {
+            const riseTimeAverage = calculateAverage(car.brain.stepResponseResult.riseTime);
+            const settlingTimeAverage = calculateAverage(car.brain.stepResponseResult.settlingTime);
+            const overshootAverage = calculateAverage(car.brain.stepResponseResult.overshoot);
+            const overshootPercentageAverage = calculateAverage(car.brain.stepResponseResult.overshootPercentage);
+          
+            return {
+                [`car${index}`]: {
+                    kp: car.brain.kp,
+                    ki: car.brain.ki,
+                    kd: car.brain.kd,
+                    fitness: car.fitness,
+                    riseTime: riseTimeAverage,
+                    settlingTime: settlingTimeAverage,
+                    overshoot: overshootAverage,
+                    overshootPercentage: overshootPercentageAverage
+                }
+            };
+        });
+
+        localStorage.setItem('bestCarParams', JSON.stringify(this.cars[this.cars.length - 1].brain))
+
+        carsHistory[`gen${generation}`] = carsData;
+        localStorage.setItem('carsHistory', JSON.stringify(carsHistory));
+
+        generationArr.push(generation);
+        localStorage.setItem('generationArr', generationArr);
+
+        fitnessArr.push(best.fitness);
+        localStorage.setItem('fitnessArr', fitnessArr)
+
+        // Update the gene that will be used in the next generation
         const gene = this.cars.map(car => ({ brain: car.brain }));
-    
-        // Mengonversi array baru menjadi JSON string
-        const geneJSON = JSON.stringify(gene);
-    
-        // Menyimpan JSON string ke dalam localStorage
-        localStorage.setItem('gene', geneJSON);
-    
-        // UserInterface.setGeneration(parseInt(localStorage.getItem('generation') + 4));
+        localStorage.setItem('gene', JSON.stringify(gene));
     }
+   
 }

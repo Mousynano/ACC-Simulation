@@ -1,20 +1,29 @@
-class Car{
-    constructor(x, y, width, height, controlType, maxSpeed=maxVelocity, color=getRandomColor()){
-        this.egoCarAcceleration = 0;
-        this.egoCarVelocity = [];
-        this.leadCarAcceleration = 0;
-        this.leadCarVelocity = [0, 0];
-        this.leadCarPos = [];
-        this.relativeDistance = 0;
 
-        this.fitness = 100000;
+// This class is to define the car model
+class Car{
+    // It will require thex and y where it will be spawned, the length dimension for the size,
+    // the control used by the model, the max velocity and the color
+    constructor(x, y, width, height, controlType, maxSpeed=maxVelocity, color=getRandomColor()){
+
+        // this.egoCarAcceleration = 0;
+        // this.egoCarVelocity = [];
+        this.leadCarAcceleration = 0;
+        this.leadCarVelocity = [undefined, undefined];
+        this.leadCarPos = [undefined, undefined];
+        this.relativeDistance = 0;
+        // this.egoCarVelocity = [undefined, undefined];
+
+        this.fitness = 10000;
 
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
 
-        this.speed = 0;
+        this.theta = 0;
+        this.distance = null;
+
+        this.speed = 25;
         this.acceleration = 0.2;
         this.maxSpeed = maxSpeed;
         this.friction = 0.05;
@@ -22,11 +31,9 @@ class Car{
         this.damaged = false;
 
         this.controlType = controlType;
-        // Brain.insert(this, data, mode);
+        this.controls = new Controls(controlType);
 
         this.delaySpeedSensor = 0;
-        this.coba = [];
-        this.controls = new Controls(controlType);
         
         this.img = new Image();
         this.img.src = "mobil2.png";
@@ -51,32 +58,13 @@ class Car{
             this.#move();
             this.polygon = this.#createPolygon();
             this.damaged = this.#assessDamage(roadBorders, traffic);
-            if(this.sensor){
-                this.distance = 175;
-                let leadCarNow = 175;
+            if(this.controlType != 'DUMMY'){
                 this.sensor.update(roadBorders, traffic);
-                const offsets = this.sensor.readings.map(
-                    s=>s==null ? 0 : 1 - s.offset
-                );
-
-                if ((this.sensor.readings[0]) && (this.sensor.rayCount == 1)) {
-                    leadCarNow = this.sensor.readings[0].y;
-                    if(this.leadCarPos.length > 0){
-                        this.leadCarPos[0] = this.leadCarPos[1];
-                        this.leadCarPos[1] = this.sensor.readings[0].y;
-                    }else{
-                        this.leadCarPos[1] = this.sensor.readings[0].y;
-                    }
-                    this.distance = Math.abs(this.sensor.readings[0].y - this.sensor.car.y) - 25;
-                }else{
-                    this.distance = 175;
-                    leadCarNow = 175;
-                }
-    
-                if (this.sensor.rayCount == 0){}
-                else if(this.controlType == "AI"){
-                    this.maxSpeed = 10;
-
+                if(this.controlType == "AI"){
+                    const offsets = this.sensor.readings.map(
+                        s=>s==null ? 0 : 1 - s.offset
+                    );
+                    // this.maxSpeed = 10;
                     const Arr = [[bestCar.y, this.y], ...offsets.map(offset => [3.6, 6 * offset])];
                     const sumError = Arr.reduce((acc, [value1, value2]) => acc + relu((value2 - value1)), 0);
                     const outputsNN = NeuralNetwork.feedForward(offsets, this.brain);
@@ -86,12 +74,27 @@ class Car{
                     this.controls.right = outputsNN[2];
                     this.controls.reverse = outputsNN[3];
                 }else if(this.controlType == "ACC"){
+                    this.leadCarPos[0] = this.leadCarPos[1];
+                    if(this.sensor.readings[0]){
+                        this.leadCarPos[1] = this.sensor.readings[0].y;
+                    }else{
+                        this.leadCarPos[1] = undefined;
+                    }
+                    this.leadCarVelocity[0] = this.leadCarVelocity[1];
+                    const Vlead = ((this.leadCarPos[0] == undefined) || (this.leadCarPos[1] == undefined)) ? undefined : Math.abs(this.leadCarPos[1] - this.leadCarPos[0]);
+                    this.leadCarVelocity[1] = Vlead;
+                    const Alead = ((this.leadCarVelocity[0] == undefined )|| (this.leadCarVelocity[1] == undefined)) ? undefined : (this.leadCarVelocity[1] - this.leadCarVelocity[0]);
+                    this.leadCarAcceleration = Alead;
+
                     const controlKeys = [this.controls.forward, this.controls.reverse, this.controls.left, this.controls.right];
                     const allFalse = controlKeys.every(key => !key);
                     if (allFalse){
-                        let [outputsACC, fitness] = AdaptiveCruiseControl.accUpdate(this.speed, this.distance, safeDistance, leadCarNow, desiredSpeed, this.brain);
-                        this.fitness = fitness;
-                        this.speed += outputsACC;
+                        const Ddef = 250;
+                        const Tg = 1/25;
+                        this.safeDistance = Ddef + (Tg * this.speed);
+                        this.brain.accUpdate(this.speed, Vlead, desiredSpeed, this.y, this.leadCarPos[1], this.safeDistance)
+                        this.acceleration = this.brain.pid;
+                        this.fitness = this.brain.fitness;
                     }
                 }
             }
@@ -170,36 +173,30 @@ class Car{
             }
         }
 
-        // console.log("speed now: " + this.speed);
+        if(this.controlType == 'ACC'){
+            this.speed += this.acceleration;
+            this.Aego = (this.acceleration - this.friction)
+            this.Vego = this.speed;
+            this.Xego = this.y * dScale
+        }else if(this.controlType == 'DUMMY'){
+            this.speed = 24;
+            this.theta = (this.theta % 360) + 3;
+            this.acceleration = (sinAngle(this.theta)) * 2.5;
+            this.speed += this.acceleration;
+            this.Alead = (this.acceleration - this.friction)
+            this.Vlead = this.speed;
+            this.Xlead = this.y * dScale;
+        }
+
         this.x -= Math.sin(this.angle) * this.speed;
         this.y -= Math.cos(this.angle) * this.speed;
-
-        this.speedOutput = this.speed;
-        if (this.egoCarVelocity.length != 0){
-            this.egoCarVelocity[0] = this.egoCarVelocity[1];
-            this.egoCarVelocity[1] = this.speedOutput;
-            this.accelerationOutput = this.egoCarVelocity[1] - this.egoCarVelocity[0];
-            // console.log("acceleration output: " + this.accelerationOutput)
-        }else{
-            this.egoCarVelocity[1] = this.speedOutput;
-        }
-        
-        // if(this.leadCarPos.length != 0){
-        //     this.leadCarVelocity[0] = this.leadCarVelocity[1];
-        //     this.leadCarVelocity[1] = this.leadCarPos[1] - this.leadCarPos[0];
-        //     this.leadCarAcceleration = this.leadCarVelocity[1] - this.leadCarVelocity[0];
-        // }else{
-        //     this.leadCarVelocity[1] = this.leadCarPos[1] - this.leadCarPos[0];
-        //     // console.log("leadCarVelocity: " + this.leadCarVelocity);
-        //     if (!this.leadCarVelocity[1]){
-        //         this.leadCarVelocity[1] = 0;
-        //     }
-        // }
-        this.relativeDistance = this.distance;
-        this.fitness = this.damaged ? 0 : this.fitness;
     }
 
     draw(ctx, drawSensor=false){
+        // The commented code below is used for the event handling when the car is damaged or not 
+        // and also to draw from one point to another. While this is proven to be more
+        // accurate, it still have major issues for the recent code. Leave it as is if not 
+        // yet necessary
         // if(this.damaged){
         //     ctx.fillStyle = "gray";
         // }else{
@@ -211,21 +208,21 @@ class Car{
         //     ctx.lineTo(this.polygon[i].x, this.polygon[i].y);
         // }
         // ctx.fill();
+
+        // These are the event handler for the damaged car if it doesn't get damaged
         if(this.sensor && drawSensor && !this.damaged){
-            // this.car.color = "blue";
             this.sensor.draw(ctx);
         }
-        // else{
-            // this.car.color = "grey";
-        // }
+
+        // These will daw the car according to its location, rotation and also size
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(-this.angle);
         if(!this.damaged){
             ctx.drawImage(
                 this.mask,
-                -this.width/2,
-                -this.height/2,
+                -this.width / 2,
+                -this.height / 2,
                 this.width,
                 this.height
                 );
@@ -233,8 +230,8 @@ class Car{
         }
         ctx.drawImage(
                 this.img,
-                -this.width/2,
-                -this.height/2,
+                -this.width / 2,
+                -this.height / 2,
                 this.width,
                 this.height
                 );

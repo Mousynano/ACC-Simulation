@@ -1,5 +1,5 @@
-function lerp(A, B, t){
-    return A + (B - A) * t;
+function lerp(A, B, x){
+    return A + (B - A) * x;
 }
 
 function getIntersection(A, B, C, D){ 
@@ -107,5 +107,42 @@ function partition(arr, low, high) {
 
     return i + 1;
 }
+
+function splitArr(text){
+    let arr = text.split(',');
+    return arr.map(e => parseFloat(e));
+}
+
+function sinAngle(x) {
+    var radian = x * (Math.PI / 180);
+    var result = Math.sin(radian);
+    return result;
+}
+
+function calculateStandardDeviation(data) {
+    // Hitung rata-rata
+    const mean = data.reduce((acc, val) => acc + val, 0) / data.length;
+  
+    // Hitung selisih kuadrat dari setiap nilai dengan rata-rata
+    const squaredDifferences = data.map(val => Math.pow(val - mean, 2));
+  
+    // Hitung rata-rata dari selisih kuadrat
+    const meanSquaredDifferences = squaredDifferences.reduce((acc, val) => acc + val, 0) / squaredDifferences.length;
+  
+    // Hitung akar kuadrat dari rata-rata selisih kuadrat
+    const standardDeviation = Math.sqrt(meanSquaredDifferences);
+  
+    return standardDeviation;
+}
+
+function calculateAverage(numbers) {
+    const validNumbers = numbers.filter(number => typeof number === 'number' && !isNaN(number) && number !== null);
+    
+    if (validNumbers.length === 0) return 0;
+    
+    const sum = validNumbers.reduce((accumulator, currentValue) => accumulator + currentValue);
+    return sum / validNumbers.length;
+}
+
 
 // dari main.js

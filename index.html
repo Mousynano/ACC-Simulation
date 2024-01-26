@@ -4,29 +4,50 @@
     <title>Proyek Akhir Sinyal & Sistem</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="ui.js"></script>
     <!-- <script src="chart.js"></script> -->
 </head>
 <body>
     <!-- <canvas id="barChart" width="400" height="400"></canvas> -->
 
-    <canvas id="carCanvas"></canvas>
-
-    <div class="grafik">
-        <div class="atas">
-            <canvas id="Kecepatan" width="300" height="150"></canvas>
-            <canvas id="Percepatan" width="300" height="150"></canvas>
-            <canvas id="JarakRelatif" width="300" height="150"></canvas>
-            <canvas id="Fitness" width="300" height="150"></canvas>
-        </div>
-    </div>
-
-    </div>
-
     <div id="verticalButtons">
-        <div id="generationInfo">Generasi: 0</div>
+
+        <div title="Mengatur kecepatan konstan yang diinginkan." class="tooltip-container" id="generationInfo">Generasi: 0</div>
+        <div>
+            <label for="maxIterButton">Max iter: </label>
+            <select title="Nilai ini membantu menghentikan program saat generasi pada iterasi tertentu tercapai." class="tooltip-container" id="maxIterButton" onchange="ui.setMaxIter(parseInt(this.value), true)">
+                <option value="5">5</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="500">500</option>
+            </select>
+        </div>
+        <div>
+            <label for="desiredSpeedButton">Kecepatan set: </label>
+            <select title="Nilai ini akan digunakan menentukan kecepatan konstan yang diinginkan." class="tooltip-container" id="desiredSpeedButton" onchange="ui.setDesiredSpeed(parseFloat(this.value), true)">
+                <option value="10">10 m/s</option>
+                <option value="15">15 m/s</option>
+                <option value="20">20 m/s</option>
+                <option value="25">25 m/s</option>
+                <option value="30">30 m/s</option>
+                <option value="35">35 m/s</option>
+                <option value="40">40 m/s</option>
+            </select>
+        </div>
+        <div>
+            <label for="objectiveFunctionButton">Fitness function: </label>
+            <select title="Ini akan digunakan untuk menentukan fitness function yang digunakan." class="tooltip-container" id="objectiveFunctionButton" onchange="ui.setObjectiveFunction(this.value, true)">
+                <option value="IAE">IAE</option>
+                <option value="ISE">ISE</option>
+                <option value="ITAE">ITAE</option>
+                <option value="ITSE">ITSE</option>
+            </select>
+        </div>
         <div>
             <label for="mutationRangeButton">Rentang Mutasi: </label>
-            <select id="mutationRangeButton" onchange="UserInterface.setMutationRange(parseFloat(this.value), true)">
+            <select title="Nilai ini akan digunakan untuk mempengaruhi besarnya mutasi pada gen." class="tooltip-container" id="mutationRangeButton" onchange="ui.setMutationRange(parseFloat(this.value), true)">
                 <option value="0">0</option>
                 <option value="0.1">0.1</option>
                 <option value="0.2">0.2</option>
@@ -42,32 +63,50 @@
         </div>
         <div>
             <label for="trainingTimeButton">Waktu training: </label>
-            <select id="trainingTimeButton" onchange="UserInterface.setTrainingTime(parseInt(this.value), true)">
-                <option value="10">10 detik</option>
-                <option value="20">20 detik</option>
-                <option value="30">30 detik</option>
-                <option value="60">60 detik</option>
+            <select title="Merepresentasikan berapa lama setiap iterasi berjalan." class="tooltip-container" id="trainingTimeButton" onchange="ui.setTrainingTime(parseInt(this.value), true)">
+                <option value="10">10 s</option>
+                <option value="20">20 s</option>
+                <option value="30">30 s</option>
+                <option value="60">60 s</option>
             </select>
         </div>
         <div>
             <label for="mutationDropdown">Crossover PID: </label>
-            <select id="mutationDropdown">
+            <select title="Menentukan penggunaan crossover pada gen." class="tooltip-container" id="mutationDropdown">
                 <option value="ya">Ya</option>
                 <option value="ngga">Tidak</option>
             </select>
         </div>
-        <button id="trainingModeButton" onclick="UserInterface.setTraining(training, true)">Training mode: OFF</button>
-        <button id="savButton" onclick="UserInterface.save()">💾</button>
-        <button id="deleteButton" onclick="UserInterface.discard()">🗑</button>
-        <button id="downloadButton" onclick="UserInterface.downloadJSON()">⬇</button>
-        <button id="currentModeButton" onclick="UserInterface.setCurrentMode(currentMode, true)"></button>
+        <div id="horizontalButtons">
+            <button title="Menentukan aktif atau tidaknya genetic algorithm." class="tooltip-container" id="trainingButton" onclick="ui.setTraining(this.value, true)"><img id="trainingGear" class="" src="icons/gear-solid.svg" alt="Gear Icon"></button>
+            <button title="Kembali mengulang generasi sebelumnya." class="tooltip-container" id="undoButton" onclick="ui.undoButton()"><img src="icons/chevron-left-16.svg" alt="Undo Icon"></button>
+            <button title="Melanjutkan/memberhentikan proses." class="tooltip-container" id="toggleButton" play="true" onclick="ui.toggle(this.play)"><img src="icons/pause-solid.svg" alt="Toggle Icon"></button>
+            <button title="Mengunduh otak terbaik dalam bentuk file." class="tooltip-container" id="downloadButton" onclick="ui.downloadJSON()"><img src="icons/download-solid.svg" alt="Download Icon"></button>
+            <!-- Copy Briska -->
+            <button title="Mengulang generasi pada saat ini." class="tooltip-container" id="refreshButton" onclick="ui.refreshButton()"><img src="icons/rotate-left-solid.svg" alt="Refresh Icon"></button>
+            <button title="Mengganti mode yang digunakan oleh mobil." class="tooltip-container" id="currentModeButton" onclick="ui.setCurrentMode(currentMode, true)"></button>
+            <button title="Menghapus semua memori dan mengulangi training dari awal." class="tooltip-container" id="resetLocalStorageButton" onclick="ui.restartButton()"><img src="icons/repeat-solid.svg" alt="Reset Button"></button>
+        </div>
+        <div id="results"></div>
     </div>
 
-    <script src="pso.js"></script>
+    <canvas id="carCanvas"></canvas>
+
+    <div class="grafik">
+        <div class="atas">
+            <canvas id="Kecepatan" width="400" height="200"></canvas>
+            <canvas id="Percepatan" width="400" height="200"></canvas>
+            <canvas id="Jarak Relatif" width="400" height="200"></canvas>
+            <canvas id="Fitness History" width="400" height="200"></canvas>
+            <!-- <canvas id="Fitness" width="400" height="200"></canvas> -->
+        </div>
+    </div>
+
+    </div>
+
     <script src="ga.js"></script>
     <script src="brain.js"></script>
     <script src="acc.js"></script>
-    <script src="ui.js"></script>
     <script src="utils.js"></script>
     <script src="visualizer.js"></script>
     <script src="network.js"></script>

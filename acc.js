@@ -1,143 +1,199 @@
+
+// This class is used for the adaptive cruise control system
 class AdaptiveCruiseControl {
     constructor() {
-        this.kp = Math.random() * 2;
-        this.ki = Math.random() * 2;
-        this.kd = Math.random() * 2; 
-        this.avc = new ActiveVelocityControl(this);
-        this.adc = new ActiveDistanceControl(this);
-        this.currentControl = null;
-        this.ff = 0;
+        // It requires the parameters to be randomized if we're working with GA
+        this.kp = Math.random();
+        this.ki = Math.random();
+        this.kd = Math.random();
+
+        // If we already  trained the parameters previously, we can define them here.
+        // Use only one piece of the code by commenting this or the code above.
+        // this.kp = 0.87;
+        // this.ki = 0.001;
+        // this.kd = 0.01; 
+        
+        this.stepResponseResult = {
+            riseTime: [],
+            settlingTime: [],
+            overshoot: [],
+            overshootPercentage: []
+        };
+
+        // Use to receive the error sent by the sensors
+        this.adcError = [0];
+        this.avcError = [0];
+        
+        // Fitness is used to define how 'good' the model performs
+        this.ff = 0; // this is the result from the objective function
         this.fitness = 10000;
+
+        //This pid is used to change the acceleration, which then change the velocity and so on
         this.pid = 0;
+
+        this.time = [];
     }
 
-    static resetHistory(control) {
-        control.errorHistory = [0];
-        control.index = 1;
-    }
+    updateStepResponseData(error) {
+        this.stepResponseResult.riseTime.push(this.findRiseTime(error));
+        this.stepResponseResult.settlingTime.push(this.findSettlingTime(error));
 
-    static accUpdate(speed, distance, safeDistance, leadCarNow, desiredSpeed, acc) {
-        if ((safeDistance < distance) || (distance == 0)) {
-            ActiveVelocityControl.avcUpdate(speed, desiredSpeed, acc.avc);
-            ActiveDistanceControl.adcUpdate(speed, distance, safeDistance, leadCarNow, acc.adc);
+        const overshoot = this.findOvershoot(error);
+        this.stepResponseResult.overshoot.push(overshoot);
+        this.stepResponseResult.overshootPercentage.push((overshoot / error[1]) * 100);
+    }
+      
+
+    findSettlingTime(error) {
+        let errorArr = error.map(Math.abs);
+        let settledError, settledIndex;
     
-            if (acc.adc.pid > acc.avc.pid) {
-                // console.log("avc if")
-                AdaptiveCruiseControl.resetHistory(acc.adc);
-                acc.currentControl = acc.avc;
-                acc.pid = acc.avc.pid;
-                acc.ff += acc.avc.ff;
-                acc.fitness = 10000 / acc.ff;
-            } else {
-                // console.log('adc if')
-                AdaptiveCruiseControl.resetHistory(acc.avc);
-                acc.currentControl = acc.adc;
-                acc.pid = acc.adc.pid;
-                acc.ff += acc.adc.ff
-                acc.fitness = 10000 / acc.ff;
+        for (let i = 1; i < errorArr.length; i++) {
+            if (((errorArr[i] / errorArr[1]) * 100) >= 0.02) {
+                settledError = errorArr[i];
             }
-    
-            acc.pid = Math.min(acc.adc.pid, acc.avc.pid);
-        } else if ((safeDistance > distance) && (distance != 0)) {
-            // console.log('adc else if')
-            ActiveDistanceControl.adcUpdate(speed, distance, safeDistance, leadCarNow, acc.adc);
-            AdaptiveCruiseControl.resetHistory(acc.avc);
-            
-            acc.currentControl = acc.adc;
-            acc.pid = acc.adc.pid;
-            acc.ff += acc.adc.ff;
-            acc.fitness = 10000 / acc.ff;
         }
-        // console.log('fitness: ' + acc.fitness);
+        // console.log(`settledError: ${settledError}`);
     
-        return [acc.pid, acc.fitness];
+        settledIndex = errorArr.findIndex(e => e == settledError);
+        return this.time[settledIndex] - this.time[1];
     }
     
-    // static mutate(control, amount=mutationRange) {
-    //     console.log("mutasi")
-    //     control.kp = lerp(control.kp, (Math.random() * 2) - 1, amount);
-    //     control.ki = lerp(control.ki, (Math.random() * 2) - 1, amount);
-    //     control.kd = lerp(control.kd, (Math.random() * 2) - 1, amount);
-    // }
+      
+    findRiseTime(error, startPercentile = 0.9, endPercentile = 0.1) {
+        let errorArr = error.map(Math.abs);
+        const startIndex = error.findIndex(x => x <= error[1] * startPercentile);
+        const endIndex = error.findIndex(e => e >= error[1] * endPercentile);
+      
+        // Pastikan indeks yang ditemukan adalah valid sebelum mengakses array
+        if (startIndex !== -1 && endIndex !== -1) {
+            const startValue = this.time[startIndex];
+            const endValue = this.time[endIndex]; // Kembalikan urutan array ke semula
+            return Math.abs(endValue - startValue);
+        } else {
+            // console.error("Indeks tidak ditemukan.");
+            return null;
+        }
+    }
+      
+      
+    findOvershoot(error) {
+        // Menetapkan nilai setpoint, misalnya, sebagai nilai terendah dari respons
+        const setpoint = Math.min(...error);
+    
+        let valleys = [];
+        let overshoot;
+    
+        // Pencarian lembah
+        for (let i = 1; i < error.length - 1; i++) {
+            if ((error[i] < error[i - 1] && error[i] < error[i + 1]) || (error[i] < error[i - 1] && error[i] < error[i + 2])) {
+                valleys.push(i);
+                if (valleys.length === 2) {
+                    break;
+                }
+            }
+        }
+    
+        // Pencarian overshoot
+        if (valleys.length === 2) {
+            overshoot = Math.max(...error.slice(valleys[0], valleys[1] + 1));
+        } else {
+            overshoot = null; // Atau nilai lain yang sesuai dengan konteks
+        }
+        return overshoot;
+    }
 
-    static calculatePID(currentControl, sumError){
-        let P = currentControl.kp * currentControl.errorHistory[currentControl.index];
-        let I = currentControl.ki * sumError;
-        let D = (currentControl.index == 0) ? (currentControl.kd * currentControl.errorHistory[currentControl.index]) : (currentControl.kd * (currentControl.errorHistory[currentControl.index] - currentControl.errorHistory[currentControl.index - 1]))
+    accUpdate(Vego, Vlead, Vset, Xego, Xlead, Dsafe) { 
+        this.time.push(time);
+        // These are the errors for both condition.
+        // avc is the speed control and adc is the distance control
+        let avc = Vset - Vego;
+        let adc = (Vlead == undefined) ? (avc + 1) : (Vlead - Vego) - (Dsafe - Math.abs(Xlead - Xego));
+
+        // The error float is limited to 13 digits after comma to avoid javascript LSB digit error
+        avc = parseFloat(avc.toFixed(13));
+        adc = parseFloat(adc.toFixed(13));
+
+        // The error the being pushed to the array to calculate the sum
+        this.adcError.push(adc);
+        this.avcError.push(avc);
+
+        // Here is the sum, it will then be used to calculate the output from the I in integration block from PID
+        const sumErrorAvc = this.avcError.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+        const sumErrorAdc = this.adcError.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+
+        // Get the PID result with the given error
+        const pidAvc = this.calculatePID(avc, this.avcError[this.avcError.length - 2], sumErrorAvc);
+        const pidAdc = this.calculatePID(adc, this.adcError[this.adcError.length - 2], sumErrorAdc);
+
+        // Defines which is smaller. If smaller then it will be used by the model
+        if(pidAvc < pidAdc){
+            if (this.adcError.length > 2){
+                this.updateStepResponseData(this.adcError);
+                this.time = [0];
+            }
+            this.adcError = [0];
+            this.pid = pidAvc;
+            switch (objectiveFunction){
+                case 'IAE':
+                    this.ff += parseFloat((iae(avc)).toFixed(13));
+                    break;
+                case 'ISE':
+                    this.ff += parseFloat((ise(avc)).toFixed(13));
+                    break;
+                case 'ITAE':
+                    this.ff += parseFloat((itae(avc), time).toFixed(13), time);
+                    break;
+                case 'ITSE':
+                    this.ff += parseFloat((itse(avc, time)).toFixed(13), time);
+                    break;
+            }
+        }else{
+            // console.log('adc')
+            if (this.avcError.length > 2){
+                this.updateStepResponseData(this.avcError);
+                this.time = [0];
+            }
+            this.avcError = [0];
+            this.pid = pidAdc;
+            switch (objectiveFunction){
+                case 'IAE':
+                    this.ff += parseFloat((iae(adc)).toFixed(13));
+                    break;
+                case 'ISE':
+                    this.ff += parseFloat((ise(adc)).toFixed(13));
+                    break;
+                case 'ITAE':
+                    this.ff += parseFloat((itae(adc, time)).toFixed(13));
+                    break;
+                case 'ITSE':
+                    this.ff += parseFloat((itse(adc, time)).toFixed(13));
+                    break;
+            }
+        }
+
+        // Calculate the fitness from the objective function
+        this.fitness = 10000 / this.ff
+        // console.log(`ff: ${this.ff}`);
+    }
+
+    calculatePID(error, prevError, sumError){
+        // Calculate each block
+        let P = this.kp * error;
+        let I = this.ki * sumError;
+        let D = this.kd * (error - prevError);
+
+        // Sum all of the block
         let pid = (P + I + D);
+
+        // Apply threshod to the acceleration
         if (pid < minAcceleration){
             pid = minAcceleration;
         }else if (pid > maxAcceleration){
             pid = maxAcceleration;
         }
-        currentControl.pid = pid;
-        currentControl.index += 1;
-    }
-}
 
-
-class ActiveVelocityControl {
-    constructor(params){
-        this.kp = params.kp;
-        this.ki = params.ki;
-        this.kd = params.kd;
-
-        this.errorHistory = [0];
-        this.oscillation = [];
-        this.index = 1;
-        this.ff = 0;
-        this.pid = 0;
-    }
-
-    static #calculateError(index, errorHistory, speed, desiredSpeed){
-        let error = desiredSpeed - speed;
-        error = parseFloat(error.toPrecision(13));
-        errorHistory[index] = error;
-        let sumError = errorHistory.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-        return sumError;
-    }
-
-    static avcUpdate(speed, desiredSpeed, currentControl){
-        const sumError = this.#calculateError(currentControl.index, currentControl.errorHistory, speed, desiredSpeed);
-        currentControl.ff = iae(currentControl.errorHistory[currentControl.index]);
-        currentControl.ff = parseFloat((currentControl.ff).toPrecision(13));
-        // console.log('ff: ' + currentControl.ff);
-        AdaptiveCruiseControl.calculatePID(currentControl, sumError);
-    }
-}
-// 0.5000000000000027
-class ActiveDistanceControl {
-    constructor(params){
-        this.kp = params.kp;
-        this.ki = params.ki;
-        this.kd = params.kd;
-
-        this.errorHistory = [0];
-        this.oscillation = [];
-        this.index = 1;
-        this.pid = 0;
-        this.ff = 0;
-        this.leadCarPos = [];
-    }
-
-    static #calculateError(index, leadCarPos, errorHistory, leadCarNow, safeDistance, distance, speed){
-        leadCarPos[0] = leadCarPos[1];
-        leadCarPos[1] = leadCarNow;
-        const VelRel = (leadCarPos[0] - leadCarPos[1]) - speed;
-        let error = VelRel - (safeDistance - distance);
-        error = parseFloat(error.toPrecision(13));
-        errorHistory[index] = error;
-        const sumError = errorHistory.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-        return sumError;
-    }
-
-    static adcUpdate(speed, distance, safeDistance, leadCarNow, currentControl){
-        if (currentControl.leadCarPos.length != 0){
-            const sumError = this.#calculateError(currentControl.index, currentControl.leadCarPos, currentControl.errorHistory, leadCarNow, safeDistance, distance, speed);
-            currentControl.ff = iae(currentControl.errorHistory[currentControl.index]);
-            AdaptiveCruiseControl.calculatePID(currentControl, sumError);
-        }else{
-            currentControl.leadCarPos[1] = leadCarNow;
-        }
+        // Pass to update the pid
+        return pid;
     }
 }

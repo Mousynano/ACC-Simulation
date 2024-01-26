@@ -2,7 +2,7 @@ class Sensor{
     constructor(car, rayCount){
         this.car = car;
         this.rayCount = rayCount;
-        this.rayLength = 200;
+        this.rayLength = 300;
         this.raySpread = Math.PI / 4;
 
         this.rays = [];
@@ -62,9 +62,9 @@ class Sensor{
         this.rays = [];
         for(let i = 0; i < this.rayCount; i++){
             const rayAngle = lerp(
-                this.raySpread/2,
-                -this.raySpread/2,
-                this.rayCount == 1? 0.5 : i / (this.rayCount - 1)
+                this.raySpread / 2,
+                -this.raySpread / 2,
+                this.rayCount == 1 ? 0.5 : i / (this.rayCount - 1)
             ) + this.car.angle;
 
             const start = {x: this.car.x, y: this.car.y};
@@ -85,8 +85,9 @@ class Sensor{
                 end = this.readings[i];
             }
 
+            // This is for the untouched sensor signal length
             ctx.beginPath();
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 10;
             ctx.strokeStyle = "yellow";
             ctx.moveTo(
                 this.rays[i][0].x,
@@ -98,9 +99,10 @@ class Sensor{
             );
             ctx.stroke();
 
+            // This is for the touched sensor signal length
             ctx.beginPath();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "black";
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = "white";
             ctx.moveTo(
                 this.rays[i][1].x,
                 this.rays[i][1].y
