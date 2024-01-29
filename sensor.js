@@ -1,8 +1,21 @@
+/*
+This file is part of Smart Car Simulations.
+Smart Car Simulations is free software: you can redistribute it and/or modify it under the terms 
+of the GNU General Public License as published by the Free Software Foundation, 
+either version 3 of the License, or (at your option) any later version.
+
+Smart Car Simulations is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with Foobar. 
+If not, see <https://www.gnu.org/licenses/>.
+*/
+
 class Sensor{
     constructor(car, rayCount){
         this.car = car;
         this.rayCount = rayCount;
-        this.rayLength = 300;
+        this.rayLength = 750;
         this.raySpread = Math.PI / 4;
 
         this.rays = [];
@@ -67,11 +80,11 @@ class Sensor{
                 this.rayCount == 1 ? 0.5 : i / (this.rayCount - 1)
             ) + this.car.angle;
 
-            const start = {x: this.car.x, y: this.car.y};
+            const start = {x: this.car.xv, y: this.car.yv};
             const end = {
-                x: this.car.x -
+                x: this.car.xv -
                     Math.sin(rayAngle) * this.rayLength,
-                y: this.car.y -
+                y: this.car.yv -
                     Math.cos(rayAngle) * this.rayLength
             };
             this.rays.push([start, end]);

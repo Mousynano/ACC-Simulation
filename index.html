@@ -1,3 +1,16 @@
+<!-- 
+This file is part of Smart Car Simulations.
+Smart Car Simulations is free software: you can redistribute it and/or modify it under the terms 
+of the GNU General Public License as published by the Free Software Foundation, 
+either version 3 of the License, or (at your option) any later version.
+
+Smart Car Simulations is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with Foobar. 
+If not, see <https://www.gnu.org/licenses/>. 
+-->
+
 <!DOCTYPE html>
 <head>
     <meta charset="utf-8">
@@ -10,7 +23,7 @@
 <body>
     <!-- <canvas id="barChart" width="400" height="400"></canvas> -->
 
-    <div id="verticalButtons">
+    <div id="gui">
 
         <div title="Mengatur kecepatan konstan yang diinginkan." class="tooltip-container" id="generationInfo">Generasi: 0</div>
         <div>
@@ -70,21 +83,13 @@
                 <option value="60">60 s</option>
             </select>
         </div>
-        <div>
-            <label for="mutationDropdown">Crossover PID: </label>
-            <select title="Menentukan penggunaan crossover pada gen." class="tooltip-container" id="mutationDropdown">
-                <option value="ya">Ya</option>
-                <option value="ngga">Tidak</option>
-            </select>
-        </div>
         <div id="horizontalButtons">
             <button title="Menentukan aktif atau tidaknya genetic algorithm." class="tooltip-container" id="trainingButton" onclick="ui.setTraining(this.value, true)"><img id="trainingGear" class="" src="icons/gear-solid.svg" alt="Gear Icon"></button>
-            <button title="Kembali mengulang generasi sebelumnya." class="tooltip-container" id="undoButton" onclick="ui.undoButton()"><img src="icons/chevron-left-16.svg" alt="Undo Icon"></button>
             <button title="Melanjutkan/memberhentikan proses." class="tooltip-container" id="toggleButton" play="true" onclick="ui.toggle(this.play)"><img src="icons/pause-solid.svg" alt="Toggle Icon"></button>
             <button title="Mengunduh otak terbaik dalam bentuk file." class="tooltip-container" id="downloadButton" onclick="ui.downloadJSON()"><img src="icons/download-solid.svg" alt="Download Icon"></button>
-            <!-- Copy Briska -->
-            <button title="Mengulang generasi pada saat ini." class="tooltip-container" id="refreshButton" onclick="ui.refreshButton()"><img src="icons/rotate-left-solid.svg" alt="Refresh Icon"></button>
             <button title="Mengganti mode yang digunakan oleh mobil." class="tooltip-container" id="currentModeButton" onclick="ui.setCurrentMode(currentMode, true)"></button>
+            <button title="Mengulang generasi pada saat ini." class="tooltip-container" id="refreshButton" onclick="ui.refreshButton()"><img src="icons/rotate-left-solid.svg" alt="Refresh Icon"></button>
+            <button title="Kembali mengulang generasi sebelumnya." class="tooltip-container" id="undoButton" onclick="ui.undoButton()"><img src="icons/chevron-left-16.svg" alt="Undo Icon"></button>
             <button title="Menghapus semua memori dan mengulangi training dari awal." class="tooltip-container" id="resetLocalStorageButton" onclick="ui.restartButton()"><img src="icons/repeat-solid.svg" alt="Reset Button"></button>
         </div>
         <div id="results"></div>

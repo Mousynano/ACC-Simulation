@@ -1,3 +1,15 @@
+/*
+This file is part of Smart Car Simulations.
+Smart Car Simulations is free software: you can redistribute it and/or modify it under the terms 
+of the GNU General Public License as published by the Free Software Foundation, 
+either version 3 of the License, or (at your option) any later version.
+
+Smart Car Simulations is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with Foobar. 
+If not, see <https://www.gnu.org/licenses/>.
+*/
 
 // This class is to define the car model
 class Car{
@@ -5,32 +17,25 @@ class Car{
     // the control used by the model, the max velocity and the color
     constructor(x, y, width, height, controlType, maxSpeed=maxVelocity, color=getRandomColor()){
 
-        // this.egoCarAcceleration = 0;
-        // this.egoCarVelocity = [];
-        this.leadCarAcceleration = 0;
-        this.leadCarVelocity = [undefined, undefined];
-        this.leadCarPos = [undefined, undefined];
-        this.relativeDistance = 0;
-        // this.egoCarVelocity = [undefined, undefined];
+        this.leadYR = [undefined, undefined];
 
         this.fitness = 10000;
+        this.controlType = controlType;
 
-        this.x = x;
-        this.y = y;
+        this.fr = 0.05;
+        this.ar = 0;
+        this.av = 0;
+        this.vr = (this.controlType == "DUMMY") ? 22 : 25;
+        this.xv = x;
+        this.yv = y;
         this.width = width;
         this.height = height;
 
-        this.theta = 0;
-        this.distance = null;
-
-        this.speed = 25;
-        this.acceleration = 0.2;
         this.maxSpeed = maxSpeed;
-        this.friction = 0.05;
+        this.theta = 0;
         this.angle = 0;
         this.damaged = false;
 
-        this.controlType = controlType;
         this.controls = new Controls(controlType);
 
         this.delaySpeedSensor = 0;
@@ -55,7 +60,11 @@ class Car{
 
     update(roadBorders, traffic){
         if(!this.damaged){
+            this.xr = this.yv / dScale;
+            this.yr = this.yv / dScale;
+            // console.log(`ar: ${this.ar}; av: ${this.av}; vr: ${this.vr}; xv: ${this.xv}; yv: ${this.yv}`)
             this.#move();
+            
             this.polygon = this.#createPolygon();
             this.damaged = this.#assessDamage(roadBorders, traffic);
             if(this.controlType != 'DUMMY'){
@@ -65,7 +74,7 @@ class Car{
                         s=>s==null ? 0 : 1 - s.offset
                     );
                     // this.maxSpeed = 10;
-                    const Arr = [[bestCar.y, this.y], ...offsets.map(offset => [3.6, 6 * offset])];
+                    const Arr = [[bestCar.y, this.yv], ...offsets.map(offset => [3.6, 6 * offset])];
                     const sumError = Arr.reduce((acc, [value1, value2]) => acc + relu((value2 - value1)), 0);
                     const outputsNN = NeuralNetwork.feedForward(offsets, this.brain);
                     this.fitness = iae(sumError);
@@ -73,34 +82,45 @@ class Car{
                     this.controls.left = outputsNN[1];
                     this.controls.right = outputsNN[2];
                     this.controls.reverse = outputsNN[3];
+                // Program akan ke sini terlebih dulu untuk menerima input dari sensor dan menyerahkan ke model acc
                 }else if(this.controlType == "ACC"){
-                    this.leadCarPos[0] = this.leadCarPos[1];
-                    if(this.sensor.readings[0]){
-                        this.leadCarPos[1] = this.sensor.readings[0].y;
-                    }else{
-                        this.leadCarPos[1] = undefined;
-                    }
-                    this.leadCarVelocity[0] = this.leadCarVelocity[1];
-                    const Vlead = ((this.leadCarPos[0] == undefined) || (this.leadCarPos[1] == undefined)) ? undefined : Math.abs(this.leadCarPos[1] - this.leadCarPos[0]);
-                    this.leadCarVelocity[1] = Vlead;
-                    const Alead = ((this.leadCarVelocity[0] == undefined )|| (this.leadCarVelocity[1] == undefined)) ? undefined : (this.leadCarVelocity[1] - this.leadCarVelocity[0]);
-                    this.leadCarAcceleration = Alead;
+                    // this.leadYR berfungsi seperti berikut
+                    // 1. index pertama dari leadYV akan dimasukki nilai dari index ke dua
+                    // 2. Nilai index ke dua akan berubah tergantung objek yang dibaca oleh sensor. Undefined jika tidak ada
+                    // 3. Repeat
+                    this.leadYR[0] = this.leadYR[1];  // Langkah 1
 
-                    const controlKeys = [this.controls.forward, this.controls.reverse, this.controls.left, this.controls.right];
+                    // Langkah 2
+                    if(this.sensor.readings[0]){
+                        this.leadYR[1] = this.sensor.readings[0].y / dScale;
+                    }else{
+                        this.leadYR[1] = undefined;
+                    }
+
+                    // leadVV digunakan untuk menentukan kecepatan dari mobil lead
+                    // Perhitungan leadVV di sini yaitu
+                    // 1. Apakah frame sekarang atau sebelumnya TIDAK ada mobil di depan? (Karena menggunakan pernyataan '== undefined')
+                    // 2. Kalau tidak ada mobil di depan maka nilai leadVV akan menjadi undefined
+                    // 3. Kalau ada mobil di depan maka nilainya akan menjadi |this.leadYR[1] - this.leadYR[0]| (nilai absolut dari selisih posisi mobil lead dari frame sekarang dan sebelumnya)
+                    
+                    // const leadYR = traffic[0].yr;
+                    // const leadVV = traffic[0].vr;
+                    const leadVV = ((this.leadYR[0] == undefined) || (this.leadYR[1] == undefined)) ? undefined : Math.abs(this.leadYR[1] - this.leadYR[0]) * tScale;
+                    const controlKeys = [this.controls.forward, this.controls.reverse, this.controls.left, this.controls.right]; // Ini dipakai untuk menentukan kalau user sedang tidak memegang setir
                     const allFalse = controlKeys.every(key => !key);
-                    if (allFalse){
-                        const Ddef = 250;
-                        const Tg = 1/25;
-                        this.safeDistance = Ddef + (Tg * this.speed);
-                        this.brain.accUpdate(this.speed, Vlead, desiredSpeed, this.y, this.leadCarPos[1], this.safeDistance)
-                        this.acceleration = this.brain.pid;
-                        this.fitness = this.brain.fitness;
+                    // Bagian bawah ini sudah mulai bermasalah. Tolong kalau ada yang salah langsung lapor aja walau udah aku kasih komentar
+                    if (allFalse){ // Kalau User ngga megang setir berarti ACC ambil alih
+                        const Ddef = 20; // Ini seharusnya 25 meter sebagai jarak default (Karena perubahan ke pixel)
+                        const Tg = 1.2; // Ini seharusnya 1.2 sekon (Karena perubahan ke fps)
+                        this.safeDistance = Ddef + (Tg * this.vr); // Di sini untuk menentukan jarak amannya. Emang jarak aman itu variabel terikat
+                        this.brain.accUpdate(this.vr, leadVV, desiredVV, this.yr, this.leadYR[1], this.safeDistance) // Di sini letak dimana ACC memberi kendalinya
+                        this.fitness = this.brain.fitness; // Untuk perhitungan fitness, bagian ini aman
                     }
                 }
             }
         }
     }
-
+    // Fungsi ini aman
     #assessDamage(roadBorders, traffic){
         for(let i = 0; i < roadBorders.length; i++){
             if(polysIntersect(this.polygon, roadBorders[i])){
@@ -114,57 +134,58 @@ class Car{
         }
         return false;
     }
-
+    // Fungsi ini aman
     #createPolygon(){
         const points = [];
         const rad = Math.hypot(this.width, this.height) / 2;
         const alpha = Math.atan2(this.width, this.height);
         points.push({
-            x: this.x - Math.sin(this.angle - alpha) * rad,
-            y: this.y - Math.cos(this.angle - alpha) * rad
+            x: this.xv - Math.sin(this.angle - alpha) * rad,
+            y: this.yv - Math.cos(this.angle - alpha) * rad
         });
         points.push({
-            x: this.x - Math.sin(this.angle + alpha) * rad,
-            y: this.y - Math.cos(this.angle + alpha) * rad
+            x: this.xv - Math.sin(this.angle + alpha) * rad,
+            y: this.yv - Math.cos(this.angle + alpha) * rad
         });
         points.push({
-            x: this.x - Math.sin(Math.PI + this.angle - alpha) * rad,
-            y: this.y - Math.cos(Math.PI + this.angle - alpha) * rad
+            x: this.xv - Math.sin(Math.PI + this.angle - alpha) * rad,
+            y: this.yv - Math.cos(Math.PI + this.angle - alpha) * rad
         });
         points.push({
-            x: this.x - Math.sin(Math.PI + this.angle + alpha) * rad,
-            y: this.y - Math.cos(Math.PI + this.angle + alpha) * rad
+            x: this.xv - Math.sin(Math.PI + this.angle + alpha) * rad,
+            y: this.yv - Math.cos(Math.PI + this.angle + alpha) * rad
         });
         return points;
     }
-
+    // Fungsi ini bermasalah
     #move(){
+        // 2 bagian ini mungkin ngga perlu dulu diubah karena ini untuk kontrol manual
         if(this.controls.forward){
-            this.speed += this.acceleration;
+            // this.vv += this.av;
+            this.vr += 0.2 / tScale * dScale;
         }
         if(this.controls.reverse){
-            this.speed -= this.acceleration;
+            // this.vv -= this.av;
+            this.vr += 0.2 / tScale * dScale;
         }
 
-        if(this.speed > this.maxSpeed){
-            this.speed = this.maxSpeed;
-        }
-        if(this.speed < -this.maxSpeed/2){
-            this.speed = -this.maxSpeed/2;
-        }
-
-        if(this.speed > 0){
-            this.speed -= this.friction;
-        }
-        if(this.speed < 0){
-            this.speed += this.friction;
-        }
-        if(Math.abs(this.speed) < this.friction){
-            this.speed = 0;
+        // BAGIAN INI YANG KRUSIAL CUY
+        if(this.controlType == 'ACC'){
+            this.ar = this.brain.pid
+            this.av = this.ar / tScale;
+            this.vr += this.av;
+        // INI JUGA
+        }else if(this.controlType == 'DUMMY'){
+            this.theta = (this.theta % 360) + 1;
+            this.ar = sinAngle(this.theta);
+            // this.ar = 1;
+            this.av = this.ar / tScale;
+            this.vr += this.av;
         }
 
-        if(this.speed != 0){
-            const flip = (this.speed > 0) ? 1 : -1;
+        // Untuk ini seharusnya problemnya mengikuti kecepatan
+        if(this.vr != 0){
+            const flip = (this.vr > 0) ? 1 : -1;
             if(this.controls.left){
                 this.angle += 0.03 * flip;
             }
@@ -173,23 +194,33 @@ class Car{
             }
         }
 
-        if(this.controlType == 'ACC'){
-            this.speed += this.acceleration;
-            this.Aego = (this.acceleration - this.friction)
-            this.Vego = this.speed;
-            this.Xego = this.y * dScale
-        }else if(this.controlType == 'DUMMY'){
-            this.speed = 24;
-            this.theta = (this.theta % 360) + 3;
-            this.acceleration = (sinAngle(this.theta)) * 2.5;
-            this.speed += this.acceleration;
-            this.Alead = (this.acceleration - this.friction)
-            this.Vlead = this.speed;
-            this.Xlead = this.y * dScale;
+        // Ini untuk pembatas kecepatan
+        if(this.vr > maxVelocity){
+            this.vr = maxVelocity;
+        }
+        if(this.vr < minVelocity){
+            this.vr = minVelocity;
+        }
+        // Ini harusnya yang bermasalah, this.fv seharusnya -0.05 m/s^-2 
+        // jadi akan selalu berlawanan arah dengan arah gerak 
+        if(this.vr > 0){
+            this.vr -= this.fr / tScale
+        }
+        if(this.vr < 0){
+            this.vr += this.fr / tScale
+        }
+        this.ar -= this.fr
+        if(Math.abs(this.vr) < this.fr / tScale){
+            this.vr = 0;
         }
 
-        this.x -= Math.sin(this.angle) * this.speed;
-        this.y -= Math.cos(this.angle) * this.speed;
+        if(this.controlType == "DUMMY"){
+            console.log(`t = ${time}; ar = ${this.ar}`)
+        }
+
+        // Ini juga
+        this.xv -= Math.sin(this.angle) * (this.vr / tScale * dScale);
+        this.yv -= Math.cos(this.angle) * (this.vr / tScale * dScale);
     }
 
     draw(ctx, drawSensor=false){
@@ -216,7 +247,7 @@ class Car{
 
         // These will daw the car according to its location, rotation and also size
         ctx.save();
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.xv, this.yv);
         ctx.rotate(-this.angle);
         if(!this.damaged){
             ctx.drawImage(

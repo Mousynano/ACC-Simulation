@@ -1,3 +1,16 @@
+/*
+This file is part of Smart Car Simulations.
+Smart Car Simulations is free software: you can redistribute it and/or modify it under the terms 
+of the GNU General Public License as published by the Free Software Foundation, 
+either version 3 of the License, or (at your option) any later version.
+
+Smart Car Simulations is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with Foobar. 
+If not, see <https://www.gnu.org/licenses/>.
+*/
+
 class UserInterface{
     constructor(){
         this.mutationRange;
@@ -53,7 +66,7 @@ class UserInterface{
     refreshButton(){
         let generation = parseInt(localStorage.getItem('generation'));
         let carsHistory = JSON.parse(localStorage.getItem('carsHistory'));
-        delete bestCarHistory[`gen${generation}`];
+        delete carsHistory[`gen${generation}`];
         generation -= 1;
         localStorage.setItem('generation', JSON.stringify(generation));
         localStorage.setItem('carsHistory', JSON.stringify(carsHistory));
@@ -68,9 +81,16 @@ class UserInterface{
         }else{
             delete carsHistory[`gen${generation}`];
             delete carsHistory[`gen${generation - 1}`];
+            generationArr.pop();
+            fitnessArr.pop();
+
             generation -= 2;
+            generation = (generation < 1) ? 0 : generation
+
             localStorage.setItem('generation', JSON.stringify(generation));
             localStorage.setItem('carsHistory', JSON.stringify(carsHistory));
+            localStorage.setItem('generationArr', generationArr);
+            localStorage.setItem('fitnessArr', fitnessArr);
             location.reload(true);
         }
     }
@@ -259,6 +279,44 @@ class UserInterface{
     save() {
         localStorage.setItem(data, JSON.stringify(bestCar.brain));
     }
+
+    downloadJSON() {
+        const jsonData1 = localStorage.getItem('carsHistory');
+        const jsonData2 = localStorage.getItem('bestCarParams');
+    
+        if (jsonData1 || jsonData2) {
+            if (jsonData1) {
+                const formattedJsonData1 = JSON.stringify(JSON.parse(jsonData1), null, 2);
+                const blob1 = new Blob([formattedJsonData1], { type: "application/json" });
+                const url1 = URL.createObjectURL(blob1);
+                const a1 = document.createElement("a");
+                a1.href = url1;
+                a1.download = `${this.objectiveFunction}_carsHistory_gen${generation}_.json`;
+                document.body.appendChild(a1);
+                a1.click();
+                document.body.removeChild(a1);
+            } else {
+                console.log(`Data JSON 'carsHistory' tidak ditemukan di localStorage`);
+            }
+    
+            if (jsonData2) {
+                const formattedJsonData2 = JSON.stringify(JSON.parse(jsonData2), null, 2);
+                const blob2 = new Blob([formattedJsonData2], { type: "application/json" });
+                const url2 = URL.createObjectURL(blob2);
+                const a2 = document.createElement("a");
+                a2.href = url2;
+                a2.download = `${this.objectiveFunction}_bestCarParams_gen${generation}_.json`;
+                document.body.appendChild(a2);
+                a2.click();
+                document.body.removeChild(a2);
+            } else {
+                console.log(`Data JSON 'bestCarParams' tidak ditemukan di localStorage`);
+            }
+        } else {
+            console.log(`Tidak ada data JSON yang ditemukan di localStorage`);
+        }
+    }
+    
     
     downloadJSON() {
         const jsonData1 = localStorage.getItem('carsHistory');

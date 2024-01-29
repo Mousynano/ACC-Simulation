@@ -1,4 +1,19 @@
 
+/*
+This file is part of Smart Car Simulations.
+Smart Car Simulations is free software: you can redistribute it and/or modify it under the terms 
+of the GNU General Public License as published by the Free Software Foundation, 
+either version 3 of the License, or (at your option) any later version.
+
+Smart Car Simulations is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with Foobar. 
+If not, see <https://www.gnu.org/licenses/>.
+*/
+
+// Bagian yang mungkin perlu diperbaiki ada di method/fungsi accUpdate() dan calculatePID()
+
 // This class is used for the adaptive cruise control system
 class AdaptiveCruiseControl {
     constructor() {
@@ -26,7 +41,7 @@ class AdaptiveCruiseControl {
         
         // Fitness is used to define how 'good' the model performs
         this.ff = 0; // this is the result from the objective function
-        this.fitness = 10000;
+        this.fitness = 100000;
 
         //This pid is used to change the acceleration, which then change the velocity and so on
         this.pid = 0;
@@ -102,13 +117,13 @@ class AdaptiveCruiseControl {
         }
         return overshoot;
     }
-
     accUpdate(Vego, Vlead, Vset, Xego, Xlead, Dsafe) { 
+        // console.log(`Vego: ${Vego}; Vlead: ${Vlead}; Vset: ${Vset}; Xego: ${Xego}; Xlead: ${Xlead}; Dsafe: ${Dsafe}`)
         this.time.push(time);
         // These are the errors for both condition.
         // avc is the speed control and adc is the distance control
         let avc = Vset - Vego;
-        let adc = (Vlead == undefined) ? (avc + 1) : (Vlead - Vego) - (Dsafe - Math.abs(Xlead - Xego));
+        let adc = (Vlead - Vego) - (Dsafe - Math.abs(Xlead - Xego));
 
         // The error float is limited to 13 digits after comma to avoid javascript LSB digit error
         avc = parseFloat(avc.toFixed(13));
@@ -124,10 +139,11 @@ class AdaptiveCruiseControl {
 
         // Get the PID result with the given error
         const pidAvc = this.calculatePID(avc, this.avcError[this.avcError.length - 2], sumErrorAvc);
-        const pidAdc = this.calculatePID(adc, this.adcError[this.adcError.length - 2], sumErrorAdc);
+        const pidAdc = (Vlead == undefined) ? (pidAvc + 1) : this.calculatePID(adc, this.adcError[this.adcError.length - 2], sumErrorAdc);
 
         // Defines which is smaller. If smaller then it will be used by the model
         if(pidAvc < pidAdc){
+            // console.log('avc');
             if (this.adcError.length > 2){
                 this.updateStepResponseData(this.adcError);
                 this.time = [0];
@@ -173,7 +189,7 @@ class AdaptiveCruiseControl {
         }
 
         // Calculate the fitness from the objective function
-        this.fitness = 10000 / this.ff
+        this.fitness = 100000 / this.ff
         // console.log(`ff: ${this.ff}`);
     }
 
