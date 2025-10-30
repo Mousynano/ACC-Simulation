@@ -62,7 +62,6 @@ class Car{
         if(!this.damaged){
             this.xr = this.yv / dScale;
             this.yr = this.yv / dScale;
-            console.log(`ar: ${this.ar}; av: ${this.av}; vr: ${this.vr}; xv: ${this.xv}; yv: ${this.yv}`)
             this.#move();
             
             this.polygon = this.#createPolygon();
@@ -214,9 +213,7 @@ class Car{
             this.vr = 0;
         }
 
-        if(this.controlType == "DUMMY"){
-            console.log(`t = ${time}; ar = ${this.ar}`)
-        }
+        if(this.controlType == "DUMMY"){}
 
         // Ini juga
         this.xv -= Math.sin(this.angle) * (this.vr / tScale * dScale);
