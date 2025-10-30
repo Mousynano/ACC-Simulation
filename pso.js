@@ -1,5 +1,6 @@
 class Particle {
-  constructor(minParams, maxParams, position, dimensions = 3) {
+  constructor(minParams, maxParams, position, brain, dimensions = 3) {
+    this.brain = brain
     this.minParams = minParams;
     this.maxParams = maxParams;
     this.position = position
@@ -29,7 +30,7 @@ class ParticleSwarmOptimization {
   } = {}) {
     this.nParticles = nParticles;
     this.maxIteration = maxIteration;
-    this.particles = particles.map(p => new Particle(minParams, maxParams, p.brain.params))
+    this.particles = particles.map(p => new Particle(minParams, maxParams, p.brain.params, p.brain, minParams.length));
     this.bestValue = -10000;
     this.bestPosition = Array(minParams.length).fill(0);
     this.w = w;

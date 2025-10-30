@@ -1,5 +1,6 @@
 class Komodo {
-  constructor(minParams, maxParams, position, dimensions = 3) {
+  constructor(minParams, maxParams, position, brain, dimensions = 3) {
+    this.brain = brain;
     this.minParams = minParams;
     this.maxParams = maxParams;
     this.position = position;
@@ -42,7 +43,7 @@ class StochasticKomodoAlgorithm {
     this.dimensions = minParams.length;
 
     this.komodos = komodos.map(
-      (k) => new Komodo(minParams, maxParams, k.brain.params, minParams.length)
+      (k) => new Komodo(minParams, maxParams, k.brain.params, k.brain, minParams.length)
     );
 
     this.bestValue = -Infinity;

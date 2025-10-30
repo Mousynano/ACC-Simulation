@@ -1,5 +1,6 @@
 class Hiker {
-  constructor(minParams, maxParams, position, dimensions = 3) {
+  constructor(minParams, maxParams, position, brain, dimensions = 3) {
+    this.brain = brain;
     this.minParams = minParams;
     this.maxParams = maxParams;
     this.position = position;
@@ -31,7 +32,7 @@ class HikingOptimizationAlgorithm {
     this.nHikers = nHikers;
     this.maxIteration = maxIteration;
     this.hikers = hikers.map(
-      (h) => new Hiker(minParams, maxParams, h.brain.params, minParams.length)
+      (h) => new Hiker(minParams, maxParams, h.brain.params, h.brain, minParams.length)
     );
     this.minParams = minParams;
     this.maxParams = maxParams;
