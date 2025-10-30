@@ -59,7 +59,7 @@ let charts = [];
 const road = new Road(carCanvas.width / 2,carCanvas.width * 0.9);
 
 // Initialize the number of models will be used in the training
-const N = 5;
+const N = 100;
 
 // Initialize the modes and the brain being used. It is by default set to ACC for the previous
 // research, but you can set it in the UI button logic to unlock AI and KEYS also.
@@ -81,7 +81,7 @@ let currentMode = ui.initCurrentMode(2);
 let trainingTime = ui.initTrainingTime(10);
 let training = ui.initTraining(true);
 let desiredVV = ui.initDesiredSpeed(27);
-let objectiveFunction = ui.initObjectiveFunction('IAE');
+let objectiveFunction = ui.initObjectiveFunction('ITAE');
 let maxIter = ui.initMaxIter(5);
 
 // Mostly defines how the cars and traffics works
@@ -106,7 +106,10 @@ function generateCars(N){
 }
 
 //Initialize the algorithm being used
-let algorithm = new GeneticAlgorithm(cars);
+// let algorithm = new GeneticAlgorithm(cars);
+// let algorithm = new ParticleSwarmOptimization(cars);
+// let algorithm = new StochasticKomodoAlgorithm(cars);
+let algorithm = new HikingOptimizationAlgorithm(cars);
 
 // Used to avoid reprtitive page reloading that causes lag
 let reload = true; 

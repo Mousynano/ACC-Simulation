@@ -18,12 +18,26 @@ If not, see <https://www.gnu.org/licenses/>.
 class AdaptiveCruiseControl {
     constructor() {
         // It requires the parameters to be randomized if we're working with GA
-        this.kp = Math.random();
-        this.ki = Math.random();
-        this.kd = Math.random();
+        // this.params = [Math.random(), Math.random(), Math.random()];
+        this.params = [3.4072, 0.0339, 2.3588]
+        // [ 2.8634,  0.0431, -2.6774]
+        // this.kp = Math.random();
+        // this.ki = Math.random();
+        // this.kd = Math.random();
 
         // If we already  trained the parameters previously, we can define them here.
         // Use only one piece of the code by commenting this or the code above.
+
+        // [this.kp, this.ki, this.kd] =  [5.12, 0.0791631, 5.12] // Dynamic PSO, Good
+        // [this.kp, this.ki, this.kd] = [-5.11998517, 0.91765704, 5.11988597] // Static PSO, Bad
+        // [this.kp, this.ki, this.kd] = [5.12, 0.07874045, -5.12]; // Dynamic KMA, Bad
+        // [this.kp, this.ki, this.kd] = [5.12, 0.07874045, -5.12]; // Static KMA, Terrible
+        // [this.kp, this.ki, this.kd] =  [ 10, 0.15423675, -10]; // Dynamic KMA, Bad
+        // [this.kp, this.ki, this.kd] = [10, 0.15892311, -3.8215778]
+        // [this.kp, this.ki, this.kd] = [ 10.,           0.15826383, -10.        ]
+        // [this.kp, this.ki, this.kd] = [10.0, 0.8628822294359882, 10.0]
+        // [this.kp, this.ki, this.kd] = [1.1049840202064238, 0.19825546300634767, 0.25617854167529375] // GA, Terrible 
+
         // this.kp = 0.87;
         // this.ki = 0.001;
         // this.kd = 0.01; 
@@ -117,87 +131,112 @@ class AdaptiveCruiseControl {
         }
         return overshoot;
     }
-    accUpdate(Vego, Vlead, Vset, Xego, Xlead, Dsafe) { 
-        // console.log(`Vego: ${Vego}; Vlead: ${Vlead}; Vset: ${Vset}; Xego: ${Xego}; Xlead: ${Xlead}; Dsafe: ${Dsafe}`)
-        this.time.push(time);
-        // These are the errors for both condition.
-        // avc is the speed control and adc is the distance control
-        let avc = Vset - Vego;
-        let adc = (Vlead - Vego) - (Dsafe - Math.abs(Xlead - Xego));
 
-        // The error float is limited to 13 digits after comma to avoid javascript LSB digit error
-        avc = parseFloat(avc.toFixed(13));
-        adc = parseFloat(adc.toFixed(13));
+    accUpdate(Vego, Vlead, Vset, Xego, Xlead, Dsafe, t /* pass current sim time */) {
+        const round13 = (x) => Number.isFinite(x) ? Math.round(x * 1e13) / 1e13 : 0;
 
-        // The error the being pushed to the array to calculate the sum
-        this.adcError.push(adc);
+        // --- init state
+        if (!this.time) this.time = [0];
+        if (!this.avcError) this.avcError = [];
+        if (!this.adcError) this.adcError = [];
+        if (this.sumAvc === undefined) this.sumAvc = 0;
+        if (this.sumAdc === undefined) this.sumAdc = 0;
+        if (this.prevAvc === undefined) this.prevAvc = 0;
+        if (this.prevAdc === undefined) this.prevAdc = 0;
+        if (this.ff === undefined || !Number.isFinite(this.ff)) this.ff = 0; // <-- FIX #1
+
+        // --- push time (use provided t, not undefined "time")
+        this.time.push(t); // <-- FIX #2
+
+        // --- compute errors safely
+        const safe = (v, d=0) => (Number.isFinite(v) ? v : d);
+        Vego  = safe(Vego);
+        Vlead = (Vlead == null) ? null : safe(Vlead);
+        Vset  = safe(Vset);
+        Xego  = safe(Xego);
+        Xlead = safe(Xlead);
+        Dsafe = safe(Dsafe);
+
+        let avc = round13(Vset - Vego);
+        let adc = (Vlead == null)
+            ? 0 // won’t be used if Vlead == null
+            : round13((Vlead - Vego) - (Dsafe - Math.abs(Xlead - Xego)));
+
+        // --- update sums
         this.avcError.push(avc);
+        this.sumAvc += avc;
 
-        // Here is the sum, it will then be used to calculate the output from the I in integration block from PID
-        const sumErrorAvc = this.avcError.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-        const sumErrorAdc = this.adcError.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+        if (Vlead != null) {
+            this.adcError.push(adc);
+            this.sumAdc += adc;
+        }
 
-        // Get the PID result with the given error
-        const pidAvc = this.calculatePID(avc, this.avcError[this.avcError.length - 2], sumErrorAvc);
-        const pidAdc = (Vlead == undefined) ? (pidAvc + 1) : this.calculatePID(adc, this.adcError[this.adcError.length - 2], sumErrorAdc);
+        const prevAvc = (this.avcError.length > 1) ? this.prevAvc : 0;
+        const prevAdc = (this.adcError.length > 1) ? this.prevAdc : 0;
 
-        // Defines which is smaller. If smaller then it will be used by the model
-        if(pidAvc < pidAdc){
-            // console.log('avc');
-            if (this.adcError.length > 2){
-                this.updateStepResponseData(this.adcError);
-                this.time = [0];
+        // --- PID
+        const pidAvc = this.calculatePID(avc, prevAvc, this.sumAvc);
+        const pidAdc = (Vlead == null) ? (pidAvc + 1) : this.calculatePID(adc, prevAdc, this.sumAdc);
+
+        // guard NaN
+        const finiteAvc = Number.isFinite(pidAvc) ? pidAvc : Number.POSITIVE_INFINITY;
+        const finiteAdc = Number.isFinite(pidAdc) ? pidAdc : Number.POSITIVE_INFINITY;
+
+        const useAvc = finiteAvc <= finiteAdc; // <-- FIX #3: compare finite
+
+        if (useAvc) {
+            if (this.adcError.length > 2) {
+            this.updateStepResponseData(this.adcError);
+            this.time = [0];
             }
+            // reset ADC buffers + prev
+            this.sumAdc = 0;
             this.adcError = [0];
-            this.pid = pidAvc;
-            switch (objectiveFunction){
-                case 'IAE':
-                    this.ff += parseFloat((iae(avc)).toFixed(13));
-                    break;
-                case 'ISE':
-                    this.ff += parseFloat((ise(avc)).toFixed(13));
-                    break;
-                case 'ITAE':
-                    this.ff += parseFloat((itae(avc), time).toFixed(13), time);
-                    break;
-                case 'ITSE':
-                    this.ff += parseFloat((itse(avc, time)).toFixed(13), time);
-                    break;
+            this.prevAdc = 0; // <-- FIX #4
+
+            this.pid = finiteAvc;
+
+            switch (objectiveFunction) {
+            case 'IAE':  this.ff += round13(iae(avc)); break;
+            case 'ISE':  this.ff += round13(ise(avc)); break;
+            case 'ITAE': this.ff += round13(itae(avc, t)); break;   // <-- use t
+            case 'ITSE': this.ff += round13(itse(avc, t)); break;   // <-- use t
             }
-        }else{
-            // console.log('adc')
-            if (this.avcError.length > 2){
-                this.updateStepResponseData(this.avcError);
-                this.time = [0];
+        } else {
+            if (this.avcError.length > 2) {
+            this.updateStepResponseData(this.avcError);
+            this.time = [0];
             }
+            // reset AVC buffers + prev
+            this.sumAvc = 0;
             this.avcError = [0];
-            this.pid = pidAdc;
-            switch (objectiveFunction){
-                case 'IAE':
-                    this.ff += parseFloat((iae(adc)).toFixed(13));
-                    break;
-                case 'ISE':
-                    this.ff += parseFloat((ise(adc)).toFixed(13));
-                    break;
-                case 'ITAE':
-                    this.ff += parseFloat((itae(adc, time)).toFixed(13));
-                    break;
-                case 'ITSE':
-                    this.ff += parseFloat((itse(adc, time)).toFixed(13));
-                    break;
+            this.prevAvc = 0; // <-- FIX #4
+
+            this.pid = finiteAdc;
+
+            switch (objectiveFunction) {
+            case 'IAE':  this.ff += round13(iae(adc)); break;
+            case 'ISE':  this.ff += round13(ise(adc)); break;
+            case 'ITAE': this.ff += round13(itae(adc, t)); break;   // <-- use t
+            case 'ITSE': this.ff += round13(itse(adc, t)); break;   // <-- use t
             }
         }
 
-        // Calculate the fitness from the objective function
-        this.fitness = 100000 / this.ff
-        // console.log(`ff: ${this.ff}`);
+        // prev errors
+        this.prevAvc = avc;
+        this.prevAdc = (Vlead == null) ? 0 : adc;
+
+        // fitness: avoid div-by-zero / NaN
+        const denom = (Number.isFinite(this.ff) && this.ff !== 0) ? this.ff : Number.EPSILON;
+        this.fitness = 10000 / denom; // or: this.fitness = 1 / (1 + this.ff);
     }
+
 
     calculatePID(error, prevError, sumError){
         // Calculate each block
-        let P = this.kp * error;
-        let I = this.ki * sumError;
-        let D = this.kd * (error - prevError);
+        let P = this.params[0] * error;
+        let I = this.params[1] * sumError;
+        let D = this.params[2] * (error - prevError);
 
         // Sum all of the block
         let pid = (P + I + D);

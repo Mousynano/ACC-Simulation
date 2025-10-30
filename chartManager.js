@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // This was used to remove the old data to avoid lag. Use this if you 
         // don't need to see the data from the forst second of each generation
-        // removeOldData(charts, time); 
+        removeOldData(charts, time); 
     };
 
     // This will start the program

@@ -62,7 +62,7 @@ class Car{
         if(!this.damaged){
             this.xr = this.yv / dScale;
             this.yr = this.yv / dScale;
-            // console.log(`ar: ${this.ar}; av: ${this.av}; vr: ${this.vr}; xv: ${this.xv}; yv: ${this.yv}`)
+            console.log(`ar: ${this.ar}; av: ${this.av}; vr: ${this.vr}; xv: ${this.xv}; yv: ${this.yv}`)
             this.#move();
             
             this.polygon = this.#createPolygon();

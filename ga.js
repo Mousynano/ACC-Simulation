@@ -55,40 +55,52 @@ class GeneticAlgorithm{
         let child1 = new AdaptiveCruiseControl();
         let child2 = new AdaptiveCruiseControl();
         if(this.crossover > cRand1 && this.crossover > cRand2){
-            child1.kp = secondBest.brain.kp;
-            child1.ki = best.brain.ki;
-            child1.kd = secondBest.brain.kd;
+            child1.params = [secondBest.brain.params[0], best.brain.params[1], secondBest.brain.params[2]];
+            child2.params = [best.brain.params[0], secondBest.brain.params[1], secondBest.brain.params[2]];
 
-            child2.kp = best.brain.kp;
-            child2.ki = secondBest.brain.ki;
-            child2.kd = secondBest.brain.kd;
+            // child1.kp = secondBest.brain.kp;
+            // child1.ki = best.brain.ki;
+            // child1.kd = secondBest.brain.kd;
+
+            // child2.kp = best.brain.kp;
+            // child2.ki = secondBest.brain.ki;
+            // child2.kd = secondBest.brain.kd;
         }else{
             if(this.crossover > cRand1){
-                child1.kp = secondBest.brain.kp;
-                child1.ki = secondBest.brain.ki;
-                child1.kd = best.brain.kd;
+                child1.params = [secondBest.brain.params[0], secondBest.brain.params[1], best.brain.params[2]];
+                child2.params = [secondBest.brain.params[0], best.brain.params[1], secondBest.brain.params[2]]
 
-                child2.kp = secondBest.brain.kp;
-                child2.ki = best.brain.ki;
-                child2.kd = secondBest.brain.kd;
+                // child1.kp = secondBest.brain.kp;
+                // child1.ki = secondBest.brain.ki;
+                // child1.kd = best.brain.kd;
+
+                // child2.kp = secondBest.brain.kp;
+                // child2.ki = best.brain.ki;
+                // child2.kd = secondBest.brain.kd;
             }
             else if(this.crossover > cRand2){
-                child1.kp = best.brain.kp;
-                child1.ki = secondBest.brain.ki;
-                child1.kd = secondBest.brain.kd;
+                child1.params = [best.brain.params[0], secondBest.brain.params[1], secondBest.brain.params[2]];
+                child2.params = [secondBest.brain.params[0], secondBest.brain.params[1], best.brain.params[2]];
 
-                child2.kp = secondBest.brain.kp;
-                child2.ki = secondBest.brain.ki;
-                child2.kd = best.brain.kd;
+                // child1.kp = best.brain.kp;
+                // child1.ki = secondBest.brain.ki;
+                // child1.kd = secondBest.brain.kd;
+
+                // child2.kp = secondBest.brain.kp;
+                // child2.ki = secondBest.brain.ki;
+                // child2.kd = best.brain.kd;
             }
             else{
-                child1.kp = best.brain.kp;
-                child1.ki = best.brain.ki;
-                child1.kd = best.brain.kd;
+                child1.params = best.brain.params
+                child2.params = secondBest.brain.params
 
-                child2.kp = secondBest.brain.kp;
-                child2.ki = secondBest.brain.ki;
-                child2.kd = secondBest.brain.kd;
+                // child1.kp = best.brain.kp;
+                // child1.ki = best.brain.ki;
+                // child1.kd = best.brain.kd;
+
+                // child2.kp = secondBest.brain.kp;
+                // child2.ki = secondBest.brain.ki;
+                // child2.kd = secondBest.brain.kd;
             }
         }
         return [child1, child2];
@@ -98,12 +110,22 @@ class GeneticAlgorithm{
     // Output: 2 mutated offspring
     #mutation(child1, child2){
         if(this.mutation > Math.random()){
-            child1.kp = lerp(child1.kp, (Math.random() * 2) - 1, mutationRange);
-            child1.ki = lerp(child1.ki, (Math.random() * 2) - 1, mutationRange);
-            child1.kd = lerp(child1.kd, (Math.random() * 2) - 1, mutationRange);
-            child2.kp = lerp(child2.kp, (Math.random() * 2) - 1, mutationRange);
-            child2.ki = lerp(child2.ki, (Math.random() * 2) - 1, mutationRange); 
-            child2.kd = lerp(child2.kd, (Math.random() * 2) - 1, mutationRange);
+            child1.params = [
+                lerp(child1.params[0], (Math.random() * 2) - 1, mutationRange),
+                lerp(child1.params[1], (Math.random() * 2) - 1, mutationRange),
+                lerp(child1.params[2], (Math.random() * 2) - 1, mutationRange)
+            ]
+            child2.params = [
+                lerp(child2.params[0], (Math.random() * 2) - 1, mutationRange),
+                lerp(child2.params[1], (Math.random() * 2) - 1, mutationRange),
+                lerp(child2.params[2], (Math.random() * 2) - 1, mutationRange)
+            ]
+            // child1.kp = lerp(child1.kp, (Math.random() * 2) - 1, mutationRange);
+            // child1.ki = lerp(child1.ki, (Math.random() * 2) - 1, mutationRange);
+            // child1.kd = lerp(child1.kd, (Math.random() * 2) - 1, mutationRange);
+            // child2.kp = lerp(child2.kp, (Math.random() * 2) - 1, mutationRange);
+            // child2.ki = lerp(child2.ki, (Math.random() * 2) - 1, mutationRange); 
+            // child2.kd = lerp(child2.kd, (Math.random() * 2) - 1, mutationRange);
         }
         return [child1, child2];
     }
@@ -125,9 +147,10 @@ class GeneticAlgorithm{
           
             return {
                 [`car${index}`]: {
-                    kp: car.brain.kp,
-                    ki: car.brain.ki,
-                    kd: car.brain.kd,
+                    params: car.brain.params,
+                    // kp: car.brain.kp,
+                    // ki: car.brain.ki,
+                    // kd: car.brain.kd,
                     fitness: car.fitness,
                     riseTime: riseTimeAverage,
                     settlingTime: settlingTimeAverage,
