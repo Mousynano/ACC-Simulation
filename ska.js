@@ -168,10 +168,8 @@ class StochasticKomodoAlgorithm {
 
     // === Penyimpanan data ke localStorage ===
     const generation = parseInt(localStorage.getItem("generation")) || 0;
-    let komodoHistory =
-      localStorage.getItem("komodoHistory") === undefined
-        ? {}
-        : JSON.parse(localStorage.getItem("komodoHistory"));
+    let carsHistory = (localStorage.getItem('carsHistory') == undefined) ? {} :  JSON.parse(localStorage.getItem('carsHistory'));
+
 
     const komodoData = this.komodos.map((komodo, index) => {
       const riseTimeAverage = calculateAverage(
@@ -204,8 +202,8 @@ class StochasticKomodoAlgorithm {
       JSON.stringify(this.komodos[this.komodos.length - 1].brain)
     );
 
-    komodoHistory[`gen${generation}`] = komodoData;
-    localStorage.setItem("komodoHistory", JSON.stringify(komodoHistory));
+    carsHistory[`gen${generation}`] = komodoData;
+    localStorage.setItem("carsHistory", JSON.stringify(carsHistory));
 
     let generationArr = JSON.parse(localStorage.getItem("generationArr")) || [];
     generationArr.push(generation);

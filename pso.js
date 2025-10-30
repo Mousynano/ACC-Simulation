@@ -103,6 +103,7 @@ class ParticleSwarmOptimization {
     // Updates the history
     const generation = parseInt(localStorage.getItem('generation'));
     let carsHistory = (localStorage.getItem('carsHistory') == undefined) ? {} :  JSON.parse(localStorage.getItem('carsHistory'));
+
     const carsData = [...this.particles].map((particle, index) => {
         const riseTimeAverage = calculateAverage(particle.brain.stepResponseResult.riseTime);
         const settlingTimeAverage = calculateAverage(particle.brain.stepResponseResult.settlingTime);

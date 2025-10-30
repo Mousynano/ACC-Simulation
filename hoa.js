@@ -112,10 +112,8 @@ class HikingOptimizationAlgorithm {
 
     // === Store per generation ===
     const generation = parseInt(localStorage.getItem("generation")) || 0;
-    let hikersHistory =
-      localStorage.getItem("hikersHistory") === undefined
-        ? {}
-        : JSON.parse(localStorage.getItem("hikersHistory"));
+    let carsHistory = (localStorage.getItem('carsHistory') == undefined) ? {} :  JSON.parse(localStorage.getItem('carsHistory'));
+
 
     const hikersData = this.hikers.map((hiker, index) => {
       const riseTimeAverage = calculateAverage(
@@ -148,8 +146,8 @@ class HikingOptimizationAlgorithm {
       JSON.stringify(this.hikers[this.hikers.length - 1].brain)
     );
 
-    hikersHistory[`gen${generation}`] = hikersData;
-    localStorage.setItem("hikersHistory", JSON.stringify(hikersHistory));
+    carsHistory[`gen${generation}`] = hikersData;
+    localStorage.setItem("carsHistory", JSON.stringify(carsHistory));
 
     let generationArr = JSON.parse(localStorage.getItem("generationArr")) || [];
     generationArr.push(generation);
