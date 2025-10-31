@@ -55,7 +55,6 @@ class AdaptiveCruiseControl {
         
         // Fitness is used to define how 'good' the model performs
         this.ff = 0; // this is the result from the objective function
-        this.fitness = 100000;
 
         //This pid is used to change the acceleration, which then change the velocity and so on
         this.pid = 0;

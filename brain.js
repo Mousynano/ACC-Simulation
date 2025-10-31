@@ -64,8 +64,9 @@ class Brain{
     // This is used to sync the ACC parameters from the previous generation
     // The concept is similar from the insert, but it is used to avoid
     // callback error when using insert
-    static sync(carBrain, prevBrain){
-        carBrain.params = prevBrain.params
+    static sync(car, prevCar){
+        car.brain.params = prevCar.brain.params
+        car.brain.fitness = car.fitness
         // carBrain.kp = prevBrain.kp;
         // carBrain.ki = prevBrain.ki;
         // carBrain.kd = prevBrain.kd;

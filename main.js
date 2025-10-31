@@ -99,7 +99,7 @@ function generateCars(N){
         cars.push(new Car(road.getLaneCenter(1), 200, carWidth, carLength, mode, 40, "blue"));
         Brain.insert(cars[i], data, mode);
         if(prevCars){
-            Brain.sync(cars[i].brain, prevCars[i].brain);
+            Brain.sync(cars[i], prevCars[i]);
         }
     }
     return cars;
