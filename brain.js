@@ -65,8 +65,9 @@ class Brain{
     // The concept is similar from the insert, but it is used to avoid
     // callback error when using insert
     static sync(carBrain, prevBrain){
-        carBrain.kp = prevBrain.kp;
-        carBrain.ki = prevBrain.ki;
-        carBrain.kd = prevBrain.kd;
+        carBrain.params = prevBrain.params
+        // carBrain.kp = prevBrain.kp;
+        // carBrain.ki = prevBrain.ki;
+        // carBrain.kd = prevBrain.kd;
     }
 }
