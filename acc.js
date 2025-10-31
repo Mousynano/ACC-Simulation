@@ -18,8 +18,8 @@ If not, see <https://www.gnu.org/licenses/>.
 class AdaptiveCruiseControl {
     constructor() {
         // It requires the parameters to be randomized if we're working with GA
-        // this.params = [Math.random(), Math.random(), Math.random()];
-        this.params = [3.4072, 0.0339, 2.3588]
+        this.params = [Math.random(), Math.random(), Math.random()];
+        // this.params = [3.4072, 0.0339, 2.3588]
         // [ 2.8634,  0.0431, -2.6774]
         // this.kp = Math.random();
         // this.ki = Math.random();
@@ -55,6 +55,7 @@ class AdaptiveCruiseControl {
         
         // Fitness is used to define how 'good' the model performs
         this.ff = 0; // this is the result from the objective function
+        this.fitness = 10000;
 
         //This pid is used to change the acceleration, which then change the velocity and so on
         this.pid = 0;

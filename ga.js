@@ -41,7 +41,7 @@ class GeneticAlgorithm{
     // Input: array of cars
     // Output: array of sortedCars, best and secondBest car
     #elitism(cars){
-        const sortedCars = cars.sort((car1, car2) => car1.fitness - car2.fitness);
+        const sortedCars = cars.sort((car1, car2) => car1.brain.fitness - car2.brain.fitness);
         const best = sortedCars[sortedCars.length - 1];
         const secondBest = sortedCars[sortedCars.length - 2];
         return [sortedCars, best, secondBest];
@@ -151,7 +151,7 @@ class GeneticAlgorithm{
                     // kp: car.brain.kp,
                     // ki: car.brain.ki,
                     // kd: car.brain.kd,
-                    fitness: car.fitness,
+                    fitness: car.brain.fitness,
                     riseTime: riseTimeAverage,
                     settlingTime: settlingTimeAverage,
                     overshoot: overshootAverage,
@@ -168,7 +168,7 @@ class GeneticAlgorithm{
         generationArr.push(generation);
         localStorage.setItem('generationArr', generationArr);
 
-        fitnessArr.push(best.fitness);
+        fitnessArr.push(best.brain.fitness);
         localStorage.setItem('fitnessArr', fitnessArr)
 
         // Update the gene that will be used in the next generation

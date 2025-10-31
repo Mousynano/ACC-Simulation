@@ -19,7 +19,6 @@ class Car{
 
         this.leadYR = [undefined, undefined];
 
-        this.fitness = 10000;
         this.controlType = controlType;
 
         this.fr = 0.05;
@@ -113,7 +112,7 @@ class Car{
                         const Tg = 1.2; // Ini seharusnya 1.2 sekon (Karena perubahan ke fps)
                         this.safeDistance = Ddef + (Tg * this.vr); // Di sini untuk menentukan jarak amannya. Emang jarak aman itu variabel terikat
                         this.brain.accUpdate(this.vr, leadVV, desiredVV, this.yr, this.leadYR[1], this.safeDistance) // Di sini letak dimana ACC memberi kendalinya
-                        this.fitness = this.brain.fitness; // Untuk perhitungan fitness, bagian ini aman
+                        // this.fitness = this.brain.fitness; // Untuk perhitungan fitness, bagian ini aman
                     }
                 }
             }

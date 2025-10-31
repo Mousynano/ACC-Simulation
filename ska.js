@@ -5,7 +5,6 @@ class Komodo {
     this.maxParams = maxParams;
     this.position = position;
     this.dimensions = dimensions;
-    this.fitness = -Infinity;
     this.bestPosition = [...position];
     this.bestValue = -Infinity;
   }
@@ -57,7 +56,7 @@ class StochasticKomodoAlgorithm {
 
   // === Big Male Movement ===
   #bigMaleMove(k_i, population, f_values) {
-    const f_i = k_i.fitness;
+    const f_i = k_i.brain.fitness;
     const better = population.filter((_, idx) => f_values[idx] > f_i);
     if (better.length === 0) return k_i.position;
 
@@ -117,9 +116,10 @@ class StochasticKomodoAlgorithm {
   }
 
   endIter(verbose = true) {
-    const f_values = this.komodos.map((k) => k.fitness);
+    const f_values = this.komodos.map((k) => k.brain.fitness);
 
     for (let i = 0; i < this.popSize; i++) {
+      console.log(`check fitness: ${this.komodos[i].brain.fitness}`);
       const r = Math.random();
       const komodo = this.komodos[i];
       let newPos = [...komodo.position];
@@ -132,39 +132,40 @@ class StochasticKomodoAlgorithm {
         let bestC = C[0];
         let bestF = -Infinity;
         for (const cand of C) {
-          const fit = this.evaluate(cand);
+          // const fit = this.evaluate(cand);
           if (fit > bestF) {
             bestF = fit;
             bestC = cand;
           }
         }
-        if (bestF > komodo.fitness) newPos = bestC;
+        if (bestF > komodo.brain.fitness) newPos = bestC;
       } else {
         newPos = this.#smallMaleMove(komodo);
       }
 
       // evaluasi posisi baru
-      const newFitness = this.evaluate(newPos);
-      if (newFitness > komodo.fitness) {
+      // const newFitness = this.evaluate(newPos);
+      if (newFitness > komodo.brain.fitness) {
         komodo.position = newPos;
-        komodo.fitness = newFitness;
+        komodo.brain.params = [...newPos];
+        komodo.brain.fitness = newFitness;
       }
 
-      if (komodo.fitness > this.bestValue) {
-        this.bestValue = komodo.fitness;
+      if (komodo.brain.fitness > this.bestValue) {
+        this.bestValue = komodo.brain.fitness;
         this.bestPosition = [...komodo.position];
       }
     }
 
     this.#saveHistory();
 
-    if (verbose) {
-      console.log(
-        `Best=${this.bestValue.toFixed(6)}, Pos=[${this.bestPosition
-          .map((x) => x.toFixed(3))
-          .join(", ")}]`
-      );
-    }
+    // if (verbose) {
+    //   console.log(
+    //     `Best=${this.bestValue.toFixed(6)}, Pos=[${this.bestPosition
+    //       .map((x) => x.toFixed(3))
+    //       .join(", ")}]`
+    //   );
+    // }
 
     // === Penyimpanan data ke localStorage ===
     const generation = parseInt(localStorage.getItem("generation")) || 0;
@@ -188,7 +189,7 @@ class StochasticKomodoAlgorithm {
       return {
         [`komodo${index}`]: {
           params: komodo.brain.params,
-          fitness: komodo.fitness,
+          fitness: komodo.brain.fitness,
           riseTime: riseTimeAverage,
           settlingTime: settlingTimeAverage,
           overshoot: overshootAverage,

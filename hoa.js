@@ -7,7 +7,6 @@ class Hiker {
     this.velocity = Array(dimensions).fill(0);
     this.bestPosition = [...position];
     this.bestValue = -Infinity;
-    this.fitness = -Infinity;
   }
 
   move() {
@@ -61,13 +60,13 @@ class HikingOptimizationAlgorithm {
     for (const hiker of this.hikers) {
       // Fitness dihitung dari sistem simulasi (misalnya lean_simulate_system)
       // nilai ini harus sudah diset sebelum dipanggil HOA.endIter()
-      if (hiker.fitness > hiker.bestValue) {
-        hiker.bestValue = hiker.fitness;
+      if (hiker.brain.fitness > hiker.bestValue) {
+        hiker.bestValue = hiker.brain.fitness;
         hiker.bestPosition = [...hiker.position];
       }
 
-      if (hiker.fitness > this.bestValue) {
-        this.bestValue = hiker.fitness;
+      if (hiker.brain.fitness > this.bestValue) {
+        this.bestValue = hiker.brain.fitness;
         this.bestPosition = [...hiker.position];
       }
     }
@@ -88,6 +87,7 @@ class HikingOptimizationAlgorithm {
 
       hiker.velocity = Wi;
       hiker.move();
+      hiker.brain.params = [...hiker.position];
     }
   }
 
@@ -132,7 +132,7 @@ class HikingOptimizationAlgorithm {
       return {
         [`hiker${index}`]: {
           params: hiker.brain.params,
-          fitness: hiker.fitness,
+          fitness: hiker.brain.fitness,
           riseTime: riseTimeAverage,
           settlingTime: settlingTimeAverage,
           overshoot: overshootAverage,
@@ -141,9 +141,12 @@ class HikingOptimizationAlgorithm {
       };
     });
 
+    const sortedHikers = this.hikers.sort((h1, h2) => h2.brain.fitness - h1.brain.fitness);
+    const bestHiker = sortedHikers[0];
+
     localStorage.setItem(
       "bestHikerParams",
-      JSON.stringify(this.hikers[this.hikers.length - 1].brain)
+      JSON.stringify(bestHiker.brain)
     );
 
     carsHistory[`gen${generation}`] = hikersData;
@@ -154,7 +157,7 @@ class HikingOptimizationAlgorithm {
     localStorage.setItem("generationArr", JSON.stringify(generationArr));
 
     let fitnessArr = JSON.parse(localStorage.getItem("fitnessArr")) || [];
-    fitnessArr.push(this.bestValue);
+    fitnessArr.push(bestHiker.brain.fitness);
     localStorage.setItem("fitnessArr", JSON.stringify(fitnessArr));
 
     // Save new gene for next generation

@@ -107,9 +107,9 @@ function generateCars(N){
 
 //Initialize the algorithm being used
 // let algorithm = new GeneticAlgorithm(cars);
-// let algorithm = new ParticleSwarmOptimization(cars);
+let algorithm = new ParticleSwarmOptimization(cars);
 // let algorithm = new StochasticKomodoAlgorithm(cars);
-let algorithm = new HikingOptimizationAlgorithm(cars);
+// let algorithm = new HikingOptimizationAlgorithm(cars);
 
 // Used to avoid reprtitive page reloading that causes lag
 let reload = true; 
@@ -130,7 +130,7 @@ function animate() {
     }
 
     // Updates the bestCar to be the car with the most fitness
-    let bestCar = cars.find(c => (c.fitness == Math.max(...cars.map(c => c.fitness))) && c.damaged == false);
+    let bestCar = cars.find(c => (c.brain.fitness == Math.max(...cars.map(c => c.brain.fitness))) && c.damaged == false);
 
     // Used to update the models
     // console.log('bagian update data chart harus diteliti dulu')

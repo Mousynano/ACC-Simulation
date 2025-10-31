@@ -66,7 +66,7 @@ class Brain{
     // callback error when using insert
     static sync(car, prevCar){
         car.brain.params = prevCar.brain.params
-        car.brain.fitness = car.fitness
+        // car.brain.fitness = car.fitness
         // carBrain.kp = prevBrain.kp;
         // carBrain.ki = prevBrain.ki;
         // carBrain.kd = prevBrain.kd;

@@ -5,13 +5,11 @@ class Particle {
     this.maxParams = maxParams;
     this.position = position
     this.velocity = Array(dimensions).fill(0);
-    console.log(`this.position: ${this.position}`)
     this.bestPosition = [...this.position];
     this.bestValue = -10000;
   }
 
   move() {
-    console.log(`this.position: ${this.position}`)
     this.position = this.position.map((pos, i) => {
       let newPos = pos + this.velocity[i];
       return Math.min(Math.max(newPos, this.minParams[i]), this.maxParams[i]);
@@ -48,13 +46,13 @@ class ParticleSwarmOptimization {
   #evaluateParticles() {
     for (const particle of this.particles) {
 
-      if (particle.fitness > particle.bestValue) {
-        particle.bestValue = particle.fitness;
+      if (particle.brain.fitness > particle.bestValue) {
+        particle.bestValue = particle.brain.fitness;
         particle.bestPosition = [...particle.position];
       }
 
-      if (particle.fitness > this.bestValue) {
-        this.bestValue = particle.fitness;
+      if (particle.brain.fitness > this.bestValue) {
+        this.bestValue = particle.brain.fitness;
         this.bestPosition = [...particle.position];
       }
     }
@@ -77,6 +75,7 @@ class ParticleSwarmOptimization {
       );
 
       particle.move();
+      particle.brain.params = [...particle.position];
     }
   }
 
@@ -86,6 +85,7 @@ class ParticleSwarmOptimization {
   }
 
   endIter(verbose = true) {
+    console.log(`check fitness: ${this.particles[0].brain.fitness}`);
     this.#evaluateParticles();
     this.#moveParticles();
     this.#saveHistory();
@@ -104,6 +104,9 @@ class ParticleSwarmOptimization {
     const generation = parseInt(localStorage.getItem('generation'));
     let carsHistory = (localStorage.getItem('carsHistory') == undefined) ? {} :  JSON.parse(localStorage.getItem('carsHistory'));
 
+    this.particles = this.particles.sort((p1, p2) => p2.brain.fitness - p1.brain.fitness);
+    const best = this.particles[0];
+
     const carsData = [...this.particles].map((particle, index) => {
         const riseTimeAverage = calculateAverage(particle.brain.stepResponseResult.riseTime);
         const settlingTimeAverage = calculateAverage(particle.brain.stepResponseResult.settlingTime);
@@ -113,7 +116,7 @@ class ParticleSwarmOptimization {
         return {
             [`car${index}`]: {
                 params: particle.brain.params,
-                fitness: particle.fitness,
+                fitness: particle.brain.fitness,
                 riseTime: riseTimeAverage,
                 settlingTime: settlingTimeAverage,
                 overshoot: overshootAverage,
@@ -122,7 +125,7 @@ class ParticleSwarmOptimization {
         };
     });
 
-    localStorage.setItem('bestCarParams', JSON.stringify(this.particles[this.particles.length - 1].brain))
+    localStorage.setItem('bestCarParams', JSON.stringify(this.particles[this.particles.length - 1].brain.params))
 
     carsHistory[`gen${generation}`] = carsData;
     localStorage.setItem('carsHistory', JSON.stringify(carsHistory));
@@ -130,7 +133,7 @@ class ParticleSwarmOptimization {
     generationArr.push(generation);
     localStorage.setItem('generationArr', generationArr);
 
-    fitnessArr.push(best.fitness);
+    fitnessArr.push(this.bestValue);
     localStorage.setItem('fitnessArr', fitnessArr)
 
     // Update the gene that will be used in the next generation
