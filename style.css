@@ -1,0 +1,115 @@
+/*
+This file is part of Smart Car Simulations.
+Smart Car Simulations is free software: you can redistribute it and/or modify it under the terms 
+of the GNU General Public License as published by the Free Software Foundation, 
+either version 3 of the License, or (at your option) any later version.
+
+Smart Car Simulations is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with Foobar. 
+If not, see <https://www.gnu.org/licenses/>.
+*/
+
+body{
+    margin: 0;
+    background: darkgray;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family:'poppins';;
+}
+
+#gui{
+    background-color: white;
+    display: flex;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 10px 14px 10px;
+    margin: 2px;
+    flex-direction: column;
+}
+
+select{
+    /* margin-left: auto; */
+    float: right;
+    margin-right: 0;
+}
+
+.grafik {
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end; /* Ini seharusnya sudah membuat elemen rata di sebelah kanan */
+    margin-right: 20px; /* Contoh: Tambahkan margin kanan jika perlu */
+}
+
+.grafik .atas {
+    background: white;
+    display: flex;
+    justify-content: right;
+    align-items: right;
+    flex-direction: column;
+}
+
+button{
+    background-color: lightgray;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 10px 10px 10px;
+    margin: 2px;
+    cursor: pointer;
+}
+button:hover{
+    background: lightblue;
+}
+button:active{
+    background: blue;
+}
+#networkCanvas{
+    background: black;
+}
+#carCanvas{
+    background: #444;
+}
+
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip {
+    visibility: hidden;
+    width: 120px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip-container:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+@keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .rotate-animation {
+    animation: rotate 2s infinite linear;
+  }
+  
